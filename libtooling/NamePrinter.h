@@ -66,7 +66,8 @@ void NamePrinter<ATDWriter>::printTemplateArgList(
   clang::printTemplateArgumentList(tmpOS, Args, getPrintingPolicy());
   if (tmpOS.str().size() > templateLengthThreshold) {
     OS << "<";
-    OS.write_hex(fnv64Hash(tmpOS));
+    //OS.write_hex(fnv64Hash(tmpOS));
+    OS << tmpOS.str();
     OS << ">";
   } else {
     OS << tmpOS.str();

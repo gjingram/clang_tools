@@ -23,11 +23,3 @@
 static ASTLib::FrontendPluginRegistry::Add<ASTLib::JsonExporterASTAction> X(
     "JsonASTExporter",
     "Export the AST of source files into ATD-specified Json data");
-
-static ASTLib::FrontendPluginRegistry::Add<ASTLib::YojsonExporterASTAction> Y(
-    "YojsonASTExporter",
-    "Export the AST of source files into ATD-specified Yojson data");
-
-static ASTLib::FrontendPluginRegistry::Add<ASTLib::BiniouExporterASTAction> Z(
-    "BiniouASTExporter",
-    "Export the AST of source files into ATD-specified biniou data");

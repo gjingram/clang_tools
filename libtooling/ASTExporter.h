@@ -1,6 +1,5 @@
 /**
- * Copyright (c) 2014, Facebook, Inc.
- * Copyright (c) 2003-2014 University of Illinois at Urbana-Champaign.
+ * Copyright (c) 2014, Facebook, Inc.  * Copyright (c) 2003-2014 University of Illinois at Urbana-Champaign.
  * All rights reserved.
  *
  * This file is distributed under the University of Illinois Open Source
@@ -36,6 +35,7 @@
 #include <clang/AST/AttrVisitor.h>
 #include <clang/AST/CommentVisitor.h>
 #include <clang/AST/DeclCXX.h>
+#include <clang/AST/DeclTemplate.h>
 #include <clang/AST/DeclLookups.h>
 #include <clang/AST/DeclObjC.h>
 #include <clang/AST/DeclVisitor.h>
@@ -48,6 +48,7 @@
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendDiagnostic.h>
 #include <clang/Frontend/FrontendPluginRegistry.h>
+#include <clang/Lex/Lexer.h>
 
 #include <llvm/Support/raw_ostream.h>
 
@@ -55,6 +56,8 @@
 #include "NamePrinter.h"
 #include "SimplePluginASTAction.h"
 #include "atdlib/ATDWriter.h"
+#include <iostream>
+#include <string>
 
 //===----------------------------------------------------------------------===//
 // ASTExporter Visitor
@@ -64,11 +67,11 @@ namespace ASTLib {
 
 struct ASTExporterOptions : ASTPluginLib::PluginASTOptionsBase {
   bool withPointers = true;
-  bool dumpComments = false;
+  bool dumpComments = true;
   bool useMacroExpansionLocation = true;
   ATDWriter::ATDWriterOptions atdWriterOptions = {
       .useYojson = false,
-      .prettifyJson = true,
+      .prettifyJson = false,
   };
 
   void loadValuesFromEnvAndMap(
@@ -225,6 +228,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
 
   // The \c FullComment parent of the comment being dumped.
   const FullComment *FC;
+  std::string comment_text;
 
   NamePrinter<ATDWriter> NamePrint;
 
@@ -279,16 +283,25 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   void dumpCXXCtorInitializer(const CXXCtorInitializer &Init);
   void dumpDeclarationName(const DeclarationName &Name);
   void dumpNestedNameSpecifierLoc(NestedNameSpecifierLoc NNS);
+  void dumpTemplateTypeParmDecl(const TemplateDecl *T,
+                                const TemplateTypeParmDecl *TTP);
+  void dumpNonTypeTemplateParmDecl(const TemplateDecl *T,
+                                   const NonTypeTemplateParmDecl *NTTP);
+  void dumpTemplateTemplateParmDecl(const TemplateDecl *T,
+                                    const TemplateTemplateParmDecl *TTMP);
   void dumpTemplateArgument(const TemplateArgument &Arg);
   void dumpTemplateSpecialization(const TemplateDecl *D,
                                   const TemplateArgumentList &Args);
-  //    void dumpTemplateParameters(const TemplateParameterList *TPL);
-  //    void dumpTemplateArgumentListInfo(const TemplateArgumentListInfo &TALI);
-  //    void dumpTemplateArgumentLoc(const TemplateArgumentLoc &A);
-  //    void dumpTemplateArgumentList(const TemplateArgumentList &TAL);
-  //    void dumpTemplateArgument(const TemplateArgument &A,
-  //                              SourceRange R = SourceRange());
+  /*
+  void dumpTemplateArgumentListInfo(const TemplateArgumentListInfo &TALI);
+  void dumpTemplateArgumentLoc(const TemplateArgumentLoc &A);
+  void dumpTemplateArgumentList(const TemplateArgumentList &TAL);
+  void dumpTemplateArgument(const TemplateArgument &A,
+                                SourceRange R = SourceRange());
+  */
   void dumpCXXBaseSpecifier(const CXXBaseSpecifier &Base);
+  void dumpTemplateParameters(const TemplateDecl *D,
+                              const TemplateParameterList *TPL);
 
 #define DECLARE_VISITOR(NAME) \
   int NAME##TupleSize();      \
@@ -328,41 +341,35 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(CXXRecordDecl)
   DECLARE_VISITOR(ClassTemplateSpecializationDecl)
   DECLARE_VISITOR(CXXMethodDecl)
+  DECLARE_VISITOR(CXXConstructorDecl)
   DECLARE_VISITOR(ClassTemplateDecl)
   DECLARE_VISITOR(FunctionTemplateDecl)
   DECLARE_VISITOR(FriendDecl)
+  DECLARE_VISITOR(TypeAliasDecl)
+  DECLARE_VISITOR(TypeAliasTemplateDecl)
 
-  //    void VisitTypeAliasDecl(const TypeAliasDecl *D);
-  //    void VisitTypeAliasTemplateDecl(const TypeAliasTemplateDecl *D);
-  //    void VisitStaticAssertDecl(const StaticAssertDecl *D);
-  //    template<typename SpecializationDecl>
-  //    void VisitTemplateDeclSpecialization(ChildDumper &Children,
-  //                                         const SpecializationDecl *D,
-  //                                         bool DumpExplicitInst,
-  //                                         bool DumpRefOnly);
-  //    void VisitFunctionTemplateDecl(const FunctionTemplateDecl *D);
-  //    void VisitClassTemplateSpecializationDecl(
-  //        const ClassTemplateSpecializationDecl *D);
-  //    void VisitClassTemplatePartialSpecializationDecl(
-  //        const ClassTemplatePartialSpecializationDecl *D);
-  //    void VisitClassScopeFunctionSpecializationDecl(
-  //        const ClassScopeFunctionSpecializationDecl *D);
-  //    void VisitVarTemplateDecl(const VarTemplateDecl *D);
-  //    void VisitVarTemplateSpecializationDecl(
-  //        const VarTemplateSpecializationDecl *D);
-  //    void VisitVarTemplatePartialSpecializationDecl(
-  //        const VarTemplatePartialSpecializationDecl *D);
-  //    void VisitTemplateTypeParmDecl(const TemplateTypeParmDecl *D);
-  //    void VisitNonTypeTemplateParmDecl(const NonTypeTemplateParmDecl *D);
-  //    void VisitTemplateTemplateParmDecl(const TemplateTemplateParmDecl *D);
-  //    void VisitUsingDecl(const UsingDecl *D);
-  //    void VisitUnresolvedUsingTypenameDecl(const UnresolvedUsingTypenameDecl
-  //    *D);
-  //    void VisitUnresolvedUsingValueDecl(const UnresolvedUsingValueDecl *D);
-  //    void VisitUsingShadowDecl(const UsingShadowDecl *D);
-  //    void VisitLinkageSpecDecl(const LinkageSpecDecl *D);
-  //    void VisitAccessSpecDecl(const AccessSpecDecl *D);
-  //
+  //void VisitStaticAssertDecl(const StaticAssertDecl *D);
+  //template<typename SpecializationDecl>
+  //void VisitTemplateDeclSpecialization(ChildDumper &Children,
+  //                                     const SpecializationDecl *D,
+  //                                     bool DumpExplicitInst,
+  //                                     bool DumpRefOnly);
+  void VisitClassTemplatePartialSpecializationDecl(
+      const ClassTemplatePartialSpecializationDecl *D);
+  //void VisitClassScopeFunctionSpecializationDecl(
+  //    const ClassScopeFunctionSpecializationDecl *D);
+  //void VisitVarTemplateDecl(const VarTemplateDecl *D);
+  //void VisitVarTemplateSpecializationDecl(
+  //const VarTemplateSpecializationDecl *D);
+  //void VisitVarTemplatePartialSpecializationDecl(
+  //    const VarTemplatePartialSpecializationDecl *D);
+  //void VisitUsingDecl(const UsingDecl *D);
+  //void VisitUnresolvedUsingTypenameDecl(const UnresolvedUsingTypenameDecl
+  //*D);
+  //void VisitUnresolvedUsingValueDecl(const UnresolvedUsingValueDecl *D);
+  //void VisitUsingShadowDecl(const UsingShadowDecl *D);
+  //void VisitAccessSpecDecl(const AccessSpecDecl *D);
+
   //    // ObjC Decls
   DECLARE_VISITOR(ObjCIvarDecl)
   DECLARE_VISITOR(ObjCMethodDecl)
@@ -483,7 +490,6 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(FunctionType)
   //  DECLARE_VISITOR(FunctionNoProtoType)
   DECLARE_VISITOR(FunctionProtoType)
-  //  DECLARE_VISITOR(InjectedClassNameType)
   DECLARE_VISITOR(MemberPointerType)
   DECLARE_VISITOR(ObjCObjectPointerType)
   DECLARE_VISITOR(ObjCObjectType)
@@ -493,6 +499,12 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(ReferenceType)
   DECLARE_VISITOR(TagType)
   DECLARE_VISITOR(TypedefType)
+  DECLARE_VISITOR(TemplateTypeParmType)
+  DECLARE_VISITOR(SubstTemplateTypeParmType)
+  DECLARE_VISITOR(TemplateSpecializationType)
+  DECLARE_VISITOR(InjectedClassNameType)
+  DECLARE_VISITOR(DependentNameType)
+
 
   void dumpAttrKind(attr::Kind Kind);
   void dumpAttr(const Attr *A);
@@ -544,9 +556,9 @@ void ASTExporter<ATDWriter>::dumpPointer(const void *Ptr) {
 
 //@atd type source_file = string
 //@atd type source_location = {
-//@atd   ?file <ocaml mutable> : source_file option;
-//@atd   ?line <ocaml mutable> : int option;
-//@atd   ?column <ocaml mutable> : int option;
+//@atd   file <ocaml mutable> : source_file option;
+//@atd   line <ocaml mutable> : int option;
+//@atd   column <ocaml mutable> : int option;
 //@atd } <ocaml field_prefix="sl_" validator="Clang_ast_visit.visit_source_loc">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
@@ -564,30 +576,18 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
     return;
   }
 
-  if (strcmp(PLoc.getFilename(), LastLocFilename) != 0) {
-    ObjectScope Scope(OF, 3);
-    OF.emitTag("file");
-    // Normalizing filenames matters because the current directory may change
-    // during the compilation of large projects.
-    OF.emitString(Options.normalizeSourcePath(PLoc.getFilename()));
-    OF.emitTag("line");
-    OF.emitInteger(PLoc.getLine());
-    OF.emitTag("column");
-    OF.emitInteger(PLoc.getColumn());
-  } else if (PLoc.getLine() != LastLocLine) {
-    ObjectScope Scope(OF, 2);
-    OF.emitTag("line");
-    OF.emitInteger(PLoc.getLine());
-    OF.emitTag("column");
-    OF.emitInteger(PLoc.getColumn());
-  } else {
-    ObjectScope Scope(OF, 1);
-    OF.emitTag("column");
-    OF.emitInteger(PLoc.getColumn());
-  }
-  LastLocFilename = PLoc.getFilename();
-  LastLocLine = PLoc.getLine();
-  // TODO: lastLocColumn
+  ObjectScope Scope(OF, 3);
+  OF.emitTag("file");
+  // Normalizing filenames matters because the current directory may change
+  // during the compilation of large projects.
+  OF.emitString(Options.normalizeSourcePath(PLoc.getFilename()));
+  OF.emitTag("line");
+  OF.emitInteger(PLoc.getLine());
+  OF.emitTag("column");
+  OF.emitInteger(PLoc.getColumn());
+
+  return;
+
 }
 
 //@atd type source_range = (source_location * source_location)
@@ -600,6 +600,7 @@ void ASTExporter<ATDWriter>::dumpSourceRange(SourceRange R) {
 
 //@atd type qual_type = {
 //@atd   type_ptr : type_ptr;
+//@atd   type_name : string;
 //@atd   ~is_const : bool;
 //@atd   ~is_restrict : bool;
 //@atd   ~is_volatile : bool;
@@ -614,6 +615,9 @@ void ASTExporter<ATDWriter>::dumpQualType(const QualType &qt) {
   ObjectScope oScope(OF, 1 + isConst + isVolatile + isRestrict);
   OF.emitTag("type_ptr");
   dumpQualTypeNoQuals(qt);
+  OF.emitTag("type_name");
+  PrintingPolicy pp(Context.getLangOpts());
+  OF.emitString(qt.getAsString(pp));
   OF.emitFlag("is_const", isConst);
   OF.emitFlag("is_restrict", isRestrict);
   OF.emitFlag("is_volatile", isVolatile);
@@ -683,6 +687,7 @@ int ASTExporter<ATDWriter>::DeclContextTupleSize() {
 }
 //@atd #define decl_context_tuple decl list * decl_context_info
 //@atd type decl_context_info = {
+//@atd    c_linkage : bool;
 //@atd   ~has_external_lexical_storage : bool;
 //@atd   ~has_external_visible_storage : bool
 //@atd } <ocaml field_prefix="dci_">
@@ -721,6 +726,8 @@ void ASTExporter<ATDWriter>::VisitDeclContext(const DeclContext *DC) {
                       0 + HasExternalLexicalStorage +
                           HasExternalVisibleStorage); // not covered by tests
 
+    OF.emitTag("c_linkage");
+    OF.emitBoolean(DC->isExternCContext());
     OF.emitFlag("has_external_lexical_storage", HasExternalLexicalStorage);
     OF.emitFlag("has_external_visible_storage", HasExternalVisibleStorage);
   }
@@ -958,87 +965,88 @@ void ASTExporter<ATDWriter>::dumpNestedNameSpecifierLoc(
   }
 }
 
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::dumpTemplateParameters(const
-// TemplateParameterList *TPL) {
-//  if (!TPL)
-//    return;
-//
-//  for (TemplateParameterList::const_iterator I = TPL->begin(), E = TPL->end();
-//       I != E; ++I)
-//    dumpDecl(*I);
-//}
-//
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::dumpTemplateArgumentListInfo(
-//    const TemplateArgumentListInfo &TALI) {
-//  for (unsigned i = 0, e = TALI.size(); i < e; ++i) {
-//    dumpTemplateArgumentLoc(TALI[i]);
-//  }
-//}
-//
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::dumpTemplateArgumentLoc(const
-// TemplateArgumentLoc &A) {
-//  dumpTemplateArgument(A.getArgument(), A.getSourceRange());
-//}
-//
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::dumpTemplateArgumentList(const
-// TemplateArgumentList &TAL) {
-//  for (unsigned i = 0, e = TAL.size(); i < e; ++i)
-//    dumpTemplateArgument(TAL[i]);
-//}
-//
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::dumpTemplateArgument(const TemplateArgument &A,
-// SourceRange R) {
-//  ObjectScope Scope(OF);
-//  OS << "TemplateArgument";
-//  if (R.isValid())
-//    dumpSourceRange(R);
-//
-//  switch (A.getKind()) {
-//  case TemplateArgument::Null:
-//    OS << " null";
-//    break;
-//  case TemplateArgument::Type:
-//    OS << " type";
-//    dumpQualType(A.getAsType());
-//    break;
-//  case TemplateArgument::Declaration:
-//    OS << " decl";
-//    dumpDeclRef(A.getAsDecl());
-//    break;
-//  case TemplateArgument::NullPtr:
-//    OS << " nullptr";
-//    break;
-//  case TemplateArgument::Integral:
-//    OS << " integral " << A.getAsIntegral();
-//    break;
-//  case TemplateArgument::Template:
-//    OS << " template ";
-//    // FIXME: do not use the local dump method
-//    A.getAsTemplate().dump(OS);
-//    break;
-//  case TemplateArgument::TemplateExpansion:
-//    OS << " template expansion";
-//    // FIXME: do not use the local dump method
-//    A.getAsTemplateOrTemplatePattern().dump(OS);
-//    break;
-//  case TemplateArgument::Expression:
-//    OS << " expr";
-//    dumpStmt(A.getAsExpr());
-//    break;
-//  case TemplateArgument::Pack:
-//    OS << " pack";
-//    for (TemplateArgument::pack_iterator I = A.pack_begin(), E = A.pack_end();
-//         I != E; ++I) {
-//      dumpTemplateArgument(*I);
-//    }
-//    break;
-//  }
-//}
+/*
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpTemplateArgumentListInfo(
+   const TemplateArgumentListInfo &TALI) {
+ for (unsigned i = 0, e = TALI.size(); i < e; ++i) {
+   dumpTemplateArgumentLoc(TALI[i]);
+ }
+}
+
+
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpTemplateArgumentLoc(const TemplateArgumentLoc &A) {
+ dumpTemplateArgument(A.getArgument(), A.getSourceRange());
+}
+
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpTemplateArgumentList(const TemplateArgumentList &TAL) {
+ for (unsigned i = 0, e = TAL.size(); i < e; ++i)
+   dumpTemplateArgument(TAL[i]);
+}
+
+
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpTemplateArgument(const TemplateArgument &A,
+SourceRange R) {
+ ObjectScope Scope(OF);
+ std::string astring;
+ astring += "TemplateArgument";
+ if (R.isValid())
+   dumpSourceRange(R);
+
+ switch (A.getKind()) {
+ case TemplateArgument::Null:
+   astring += " null";
+   break;
+ case TemplateArgument::Type:
+   astring += " type";
+   dumpQualType(A.getAsType());
+   break;
+ case TemplateArgument::Declaration:
+   astring += " decl";
+   dumpDeclRef(A.getAsDecl());
+   break;
+ case TemplateArgument::NullPtr:
+   astring += " nullptr";
+   break;
+ case TemplateArgument::Integral:
+   astring += " integral " + A.getAsIntegral().toString(10);
+   break;
+ case TemplateArgument::Template:
+   astring += " template ";
+   std::ostream out;
+   // FIXME: do not use the local dump method
+   A.getAsTemplate().dump(out);
+   std::stringstream ss;
+   ss << out.rdbuf();
+   astring += ss.str();
+   break;
+ case TemplateArgument::TemplateExpansion:
+   astring += " template expansion ";
+   std::ostream out;
+   std::stringstream ss;
+
+   // FIXME: do not use the local dump method
+   A.getAsTemplateOrTemplatePattern().dump(out);
+   ss << out.rdbuf();
+   astring += ss;
+   break;
+ case TemplateArgument::Expression:
+   astring += " expr";
+   dumpStmt(A.getAsExpr());
+   break;
+ case TemplateArgument::Pack:
+   astring += " pack";
+   for (TemplateArgument::pack_iterator I = A.pack_begin(), E = A.pack_end();
+        I != E; ++I) {
+     dumpTemplateArgument(*I);
+   }
+   break;
+ }
+}
+*/
 
 template <class ATDWriter>
 bool ASTExporter<ATDWriter>::alwaysEmitParent(const Decl *D) {
@@ -1361,6 +1369,7 @@ void ASTExporter<ATDWriter>::dumpIntegerTypeWidths(const TargetInfo &info) {
 //@atd   input_kind : input_kind;
 //@atd   integer_type_widths : integer_type_widths;
 //@atd   types : c_type list;
+//@atd   ~comments : comment_tuple list
 //@atd } <ocaml field_prefix="tudi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitTranslationUnitDecl(
@@ -1398,10 +1407,11 @@ void ASTExporter<ATDWriter>::VisitNamedDecl(const NamedDecl *D) {
 
 template <class ATDWriter>
 int ASTExporter<ATDWriter>::TypedefDeclTupleSize() {
-  return ASTExporter::TypedefNameDeclTupleSize() + 1;
+  return ASTExporter::TypedefNameDeclTupleSize() + 2;
 }
 //@atd #define typedef_decl_tuple typedef_name_decl_tuple * typedef_decl_info
 //@atd type typedef_decl_info = {
+//@atd    underyling_type : qual_type;
 //@atd   ~is_module_private : bool
 //@atd } <ocaml field_prefix="tdi_">
 template <class ATDWriter>
@@ -1409,7 +1419,10 @@ void ASTExporter<ATDWriter>::VisitTypedefDecl(const TypedefDecl *D) {
   ASTExporter<ATDWriter>::VisitTypedefNameDecl(D);
 
   bool IsModulePrivate = D->isModulePrivate();
-  ObjectScope Scope(OF, 0 + IsModulePrivate);
+  ObjectScope Scope(OF, 0 + IsModulePrivate + 1);
+
+  OF.emitTag("underlying_type");
+  dumpQualType(D->getUnderlyingType());
 
   OF.emitFlag("is_module_private", IsModulePrivate);
 }
@@ -1690,6 +1703,7 @@ int ASTExporter<ATDWriter>::VarDeclTupleSize() {
 //@atd   ?init_expr : stmt option;
 //@atd   ~is_init_expr_cxx11_constant: bool;
 //@atd   ?parm_index_in_function : int option;
+//@atd   ?default : string;
 //@atd } <ocaml field_prefix="vdi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
@@ -1707,12 +1721,17 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   bool IsInitICE = D->isInitKnownICE() && D->isInitICE();
   bool HasInit = D->hasInit();
   const ParmVarDecl *ParmDecl = dyn_cast<ParmVarDecl>(D);
+  Expr *def_expr = nullptr;
+  if (ParmDecl) {
+    def_expr = const_cast<Expr*>(ParmDecl->getDefaultArg());
+  }
+  bool HasDefault = (bool) def_expr;
   bool HasParmIndex = (bool)ParmDecl;
   bool isInitExprCXX11ConstantExpr = false;
   ObjectScope Scope(OF,
                     IsGlobal + IsExtern + IsStatic + IsStaticLocal +
                         IsStaticDataMember + IsConstExpr + IsInitICE + HasInit +
-                        HasParmIndex + isInitExprCXX11ConstantExpr);
+                        HasParmIndex + isInitExprCXX11ConstantExpr + HasDefault);
 
   OF.emitFlag("is_global", IsGlobal);
   OF.emitFlag("is_extern", IsExtern);
@@ -1878,14 +1897,23 @@ int ASTExporter<ATDWriter>::CXXRecordDeclTupleSize() {
 }
 //@atd #define cxx_record_decl_tuple record_decl_tuple * cxx_record_decl_info
 //@atd type cxx_record_decl_info = {
-//@atd   ~bases : type_ptr list;
-//@atd   ~vbases : type_ptr list;
+//@atd    is_polymorphic : bool;
+//@atd    is_abstract : bool;
+//@atd   ~bases :  base_info list;
 //@atd   ~transitive_vbases : type_ptr list;
 //@atd   ~is_pod : bool;
 //@atd   ?destructor : decl_ref option;
 //@atd   ?lambda_call_operator : decl_ref option;
 //@atd   ~lambda_captures : lambda_capture_info list;
 //@atd } <ocaml field_prefix="xrdi_">
+//
+//@atd type base_info = {
+//@atd   type : type_ptr;
+//@atd   access_spec : access_specifier;
+//@atd   is_virtual : bool;
+//@atd   is_transitive : bool;
+//@atd }
+//
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitCXXRecordDecl(const CXXRecordDecl *D) {
   VisitRecordDecl(D);
@@ -1920,31 +1948,58 @@ void ASTExporter<ATDWriter>::VisitCXXRecordDecl(const CXXRecordDecl *D) {
 
   auto I = D->captures_begin(), E = D->captures_end();
   ObjectScope Scope(OF,
-                    0 + HasNonVBases + HasVBases + HasTransitiveVBases + IsPOD +
+                    2 + HasNonVBases + HasVBases + HasTransitiveVBases + IsPOD +
                         (bool)DestructorDecl + (bool)LambdaCallOperator +
                         (I != E));
 
-  if (HasNonVBases) {
+  OF.emitTag("is_polymorphic");
+  OF.emitBoolean(D->isPolymorphic());
+
+  OF.emitTag("is_abstract");
+  OF.emitBoolean(D->isAbstract());
+
+  if (HasNonVBases || HasVBases || HasTransitiveVBases) {
+
     OF.emitTag("bases");
-    ArrayScope aScope(OF, nonVBases.size());
-    for (const auto base : nonVBases) {
+    ArrayScope aScope(OF, D->bases().end() - D->bases().begin());
+    for (const auto base : D->bases()) {
+      
+      ObjectScope base_scope(OF, 3);
+
+      OF.emitTag("type");
       dumpQualTypeNoQuals(base.getType());
+
+      OF.emitTag("access_spec");
+      dumpAccessSpecifier(base.getAccessSpecifier());
+
+      OF.emitTag("is_virtual");
+      OF.emitBoolean(base.isVirtual());
+
+      OF.emitTag("is_transitive");
+      OF.emitBoolean(false);
+
     }
-  }
-  if (HasVBases) {
-    OF.emitTag("vbases");
-    ArrayScope aScope(OF, vBases.size());
-    for (const auto base : vBases) {
-      dumpQualTypeNoQuals(base.getType());
-    }
-  }
-  if (HasTransitiveVBases) {
-    OF.emitTag("transitive_vbases");
-    ArrayScope aScope(OF, numTransitiveVBases);
+
     for (const auto base : D->vbases()) {
+
+      ObjectScope base_scope(OF, 3);
+
+      OF.emitTag("type");
       dumpQualTypeNoQuals(base.getType());
+
+      OF.emitTag("access_spec");
+      dumpAccessSpecifier(base.getAccessSpecifier());
+
+      OF.emitTag("is_virtual");
+      OF.emitBoolean(base.isVirtual());
+
+      OF.emitTag("is_transitive");
+      OF.emitBoolean(true);
+
     }
+
   }
+
   OF.emitFlag("is_pod", IsPOD);
 
   if (DestructorDecl) {
@@ -2057,6 +2112,7 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
     const ClassTemplateSpecializationDecl *D) {
   VisitCXXRecordDecl(D);
+
   bool ShouldMangleName = Mangler->shouldMangleDeclName(D);
   if (ShouldMangleName) {
     SmallString<64> Buf;
@@ -2115,19 +2171,66 @@ void ASTExporter<ATDWriter>::VisitCXXMethodDecl(const CXXMethodDecl *D) {
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::CXXConstructorDeclTupleSize() {
+  return CXXMethodDeclTupleSize() + 1;
+}
+
+//@atd #define cxx_ctor_decl_tuple cxx_method_decl_tuple * cxx_ctor_decl_info
+//@atd type cxx_ctor_decl_info = {
+//@atd   is_default : bool;
+//@atd   is_copy_ctor : bool;
+//@atd   is_move_ctor : bool;
+//@atd   is_converting_ctor : bool;
+//@atd } <ocaml field_prefix="ccdi_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitCXXConstructorDecl(const CXXConstructorDecl *D) {
+    VisitCXXMethodDecl(D);    
+    ObjectScope Scope(OF, 4);
+
+    OF.emitTag("is_default");
+    OF.emitBoolean(D->isDefaultConstructor());
+
+    OF.emitTag("is_copy_ctor");
+    OF.emitBoolean(D->isCopyConstructor());
+
+    OF.emitTag("is_move_ctor");
+    OF.emitBoolean(D->isMoveConstructor());
+
+    OF.emitTag("is_converting_ctor");
+    OF.emitBoolean(D->isConvertingConstructor(true));
+
+    return;
+
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::ClassTemplateDeclTupleSize() {
   return ASTExporter<ATDWriter>::RedeclarableTemplateDeclTupleSize() + 1;
 }
 
-//@atd #define class_template_decl_tuple redeclarable_template_decl_tuple * template_decl_info
+//@atd #define class_template_decl_tuple redeclarable_template_decl_tuple * template_decl_info * cxx_record_decl_info
 //@atd type template_decl_info = {
+//@atd   ~parameters : tparam list;
 //@atd   ~specializations : decl list;
+//@atd   ~partial_specializations : decl list; 
 //@atd } <ocaml field_prefix="tdi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitClassTemplateDecl(
     const ClassTemplateDecl *D) {
   ASTExporter<ATDWriter>::VisitRedeclarableTemplateDecl(D);
+
+  VisitCXXRecordDecl(D->getTemplatedDecl());
+
   std::vector<const ClassTemplateSpecializationDecl *> DeclsToDump;
+  llvm::SmallVector<ClassTemplatePartialSpecializationDecl*, 4> partials;
+  ClassTemplateDecl *DNC = const_cast<ClassTemplateDecl*>(D);
+  //llvm::FoldingSetVector<ClassTemplatePartialSpecializationDecl> partials = D->getPartialSpecializations();
+  DNC->getPartialSpecializations(partials);
+  TemplateParameterList *pList = D->getTemplateParameters();
+
+  bool hasParams = !(pList->begin() == pList->end());
+  bool hasPartials = !(partials.begin() == partials.end());
+
   if (D == D->getCanonicalDecl()) {
     // dump specializations once
     for (const auto *spec : D->specializations()) {
@@ -2144,27 +2247,63 @@ void ASTExporter<ATDWriter>::VisitClassTemplateDecl(
       }
     }
   }
+
   bool ShouldDumpSpecializations = !DeclsToDump.empty();
-  ObjectScope Scope(OF, 0 + ShouldDumpSpecializations);
+  ObjectScope Scope(OF, 0 + ShouldDumpSpecializations + hasParams + hasPartials);
+
+  if (hasParams) {
+      OF.emitTag("parameters");
+      ArrayScope aScope(OF, pList->end() - pList->begin());
+      for (auto &p : *pList) {
+          TemplateTypeParmDecl *ttype = dyn_cast<TemplateTypeParmDecl>(p);
+          NonTypeTemplateParmDecl *nt = dyn_cast<NonTypeTemplateParmDecl>(p);
+          TemplateTemplateParmDecl *ttemp = dyn_cast<TemplateTemplateParmDecl>(p);
+          
+          if (ttype) {
+              dumpTemplateTypeParmDecl(D, ttype);
+          } else if (nt) {
+              dumpNonTypeTemplateParmDecl(D, nt);
+          } else if (ttemp) {
+              dumpTemplateTemplateParmDecl(D, ttemp);
+          }
+      }
+  }
+
   if (ShouldDumpSpecializations) {
     OF.emitTag("specializations");
     ArrayScope aScope(OF, DeclsToDump.size());
     for (const auto *spec : DeclsToDump) {
-      dumpDecl(spec);
+      VisitClassTemplateSpecializationDecl(spec);
     }
   }
+
+  if (hasPartials) {
+    OF.emitTag("partial_specializations");
+    ArrayScope aScope(OF, partials.end() - partials.begin());
+    for (auto ptl : partials) {
+      VisitClassTemplatePartialSpecializationDecl(ptl);
+    }
+  }
+
+  return;
+
 }
 
 template <class ATDWriter>
 int ASTExporter<ATDWriter>::FunctionTemplateDeclTupleSize() {
   return ASTExporter<ATDWriter>::RedeclarableTemplateDeclTupleSize() + 1;
 }
-//@atd #define function_template_decl_tuple redeclarable_template_decl_tuple * template_decl_info
+//@atd #define function_template_decl_tuple redeclarable_template_decl_tuple * function_decl_info * template_decl_info
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitFunctionTemplateDecl(
     const FunctionTemplateDecl *D) {
   ASTExporter<ATDWriter>::VisitRedeclarableTemplateDecl(D);
+  VisitFunctionDecl(D->getTemplatedDecl());
   std::vector<const FunctionDecl *> DeclsToDump;
+
+  TemplateParameterList *pList = D->getTemplateParameters();
+  bool hasParams = !(pList->begin() == pList->end());
+
   if (D == D->getCanonicalDecl()) {
     // dump specializations once
     for (const auto *spec : D->specializations()) {
@@ -2182,7 +2321,26 @@ void ASTExporter<ATDWriter>::VisitFunctionTemplateDecl(
     }
   }
   bool ShouldDumpSpecializations = !DeclsToDump.empty();
-  ObjectScope Scope(OF, 0 + ShouldDumpSpecializations);
+  ObjectScope Scope(OF, 0 + ShouldDumpSpecializations + hasParams);
+
+  if (hasParams) {
+      OF.emitTag("parameters");
+      ArrayScope aScope(OF, pList->end() - pList->begin());
+      for (auto &p : *pList) {
+          TemplateTypeParmDecl *ttype = dyn_cast<TemplateTypeParmDecl>(p);
+          NonTypeTemplateParmDecl *nt = dyn_cast<NonTypeTemplateParmDecl>(p);
+          TemplateTemplateParmDecl *ttemp = dyn_cast<TemplateTemplateParmDecl>(p);
+
+          if (ttype) {
+              dumpTemplateTypeParmDecl(D, ttype);
+          } else if (nt) {
+              dumpNonTypeTemplateParmDecl(D, nt);
+          } else if (ttemp) {
+              dumpTemplateTemplateParmDecl(D, ttemp);
+          }
+      }
+  }
+
   if (ShouldDumpSpecializations) {
     OF.emitTag("specializations");
     ArrayScope aScope(OF, DeclsToDump.size());
@@ -2190,6 +2348,9 @@ void ASTExporter<ATDWriter>::VisitFunctionTemplateDecl(
       dumpDecl(spec);
     }
   }
+
+  return;
+
 }
 
 template <class ATDWriter>
@@ -2210,19 +2371,94 @@ void ASTExporter<ATDWriter>::VisitFriendDecl(const FriendDecl *D) {
   }
 }
 
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::VisitTypeAliasDecl(const TypeAliasDecl *D) {
-//  dumpName(D);
-//  dumpQualType(D->getUnderlyingType());
-//}
-//
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::VisitTypeAliasTemplateDecl(const
-// TypeAliasTemplateDecl *D) {
-//  dumpName(D);
-//  dumpTemplateParameters(D->getTemplateParameters());
-//  dumpDecl(D->getTemplatedDecl());
-//}
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::TypeAliasDeclTupleSize() {
+  return ASTExporter::TypedefNameDeclTupleSize() + 1;
+}
+
+
+//@atd #define type_alias_tuple typedef_name_decl_tuple * type_alias_info
+//@atd type type_alias_info = {
+//@atd   underlying_type : qual_type;
+//@atd   ?described_template : pointer option
+//@atd } <ocaml field_prefix="ta_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitTypeAliasDecl(const TypeAliasDecl *D) {
+  ASTExporter<ATDWriter>::VisitTypedefNameDecl(D);
+
+  TypeAliasTemplateDecl *dtemplate = D->getDescribedAliasTemplate();
+  bool describes_template = dtemplate != nullptr;
+
+  ObjectScope Scope(OF, 0 + describes_template);
+
+  OF.emitTag("underlying_type");
+  dumpQualType(D->getUnderlyingType());
+
+  if (describes_template) {
+    OF.emitTag("described_template");
+    dumpPointer(dtemplate);
+  }
+
+  return;
+
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::TypeAliasTemplateDeclTupleSize() {
+  return TypeAliasDeclTupleSize() + 1;
+}
+
+//@atd @define type_alias_template_tuple type_alias_tuple * type_alias_template_info
+//@atd type type_alias_template_info = {
+//@atd   canonical_decl : pointer;
+//@atd   ~parameters : decl list;
+//@atd   ?member_template_decl : pointer option;
+//@atd   
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitTypeAliasTemplateDecl(const
+  TypeAliasTemplateDecl *D) {
+  
+  ASTExporter<ATDWriter>::VisitRedeclarableTemplateDecl(D);
+  VisitTypeAliasDecl(D->getTemplatedDecl());
+
+  TemplateParameterList *pList = D->getTemplateParameters();
+  bool hasParams = !(pList->begin() == pList->end());
+
+  TypeAliasTemplateDecl *member_template = D->getInstantiatedFromMemberTemplate();
+  bool mTemp = member_template != nullptr;
+
+  ObjectScope Scope(OF, 1 + hasParams + mTemp);
+
+  OF.emitTag("canonical_decl");
+  dumpPointer(D->getCanonicalDecl());
+
+  if (hasParams) {
+      OF.emitTag("parameters");
+      ArrayScope aScope(OF, pList->end() - pList->begin());
+      for (auto &p : *pList) {
+          TemplateTypeParmDecl *ttype = dyn_cast<TemplateTypeParmDecl>(p);
+          NonTypeTemplateParmDecl *nt = dyn_cast<NonTypeTemplateParmDecl>(p);
+          TemplateTemplateParmDecl *ttemp = dyn_cast<TemplateTemplateParmDecl>(p);
+
+          if (ttype) {
+              dumpTemplateTypeParmDecl(D, ttype);
+          } else if (nt) {
+              dumpNonTypeTemplateParmDecl(D, nt);
+          } else if (ttemp) {
+              dumpTemplateTemplateParmDecl(D, ttemp);
+          }
+      }
+  }
+
+  if (mTemp) {
+      OF.emitTag("member_template_decl");
+      dumpPointer(member_template);
+  }
+
+  return;
+
+}
+
 // template <class ATDWriter>
 // void ASTExporter<ATDWriter>::VisitStaticAssertDecl(const StaticAssertDecl *D)
 // {
@@ -2293,14 +2529,14 @@ void ASTExporter<ATDWriter>::VisitFriendDecl(const FriendDecl *D) {
 //  VisitCXXRecordDecl(D);
 //  dumpTemplateArgumentList(D->getTemplateArgs());
 //}
-//
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::VisitClassTemplatePartialSpecializationDecl(
-//    const ClassTemplatePartialSpecializationDecl *D) {
-//  VisitClassTemplateSpecializationDecl(D);
-//  dumpTemplateParameters(D->getTemplateParameters());
-//}
-//
+
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitClassTemplatePartialSpecializationDecl(
+  const ClassTemplatePartialSpecializationDecl *D) {
+  VisitClassTemplateSpecializationDecl(D);
+  return;
+}
+
 // template <class ATDWriter>
 // void ASTExporter<ATDWriter>::VisitClassScopeFunctionSpecializationDecl(
 //    const ClassScopeFunctionSpecializationDecl *D) {
@@ -2350,20 +2586,199 @@ void ASTExporter<ATDWriter>::VisitFriendDecl(const FriendDecl *D) {
 //  dumpTemplateParameters(D->getTemplateParameters());
 //  VisitVarTemplateSpecializationDecl(D);
 //}
+
+//@atd #define template_type_parm_tuple type_decl_tuple * template_param_kind * template_type_parm_info
+//@atd type template_type_parm_info = {
+//@atd   template_decl : pointer;
+//@atd   with_typename : bool;
+//@atd   index : int;
+//@atd   depth : int;
+//@atd   has_default : bool;
+//@atd   is_parameter_pack : bool;
+//@atd   ~default : qual_type;
+//@atd } <ocaml field_prefix="ttype_"> 
+//@atd   
+//@atd   
+//@atd type template_param_kind = [
+//@atd   TemplateTypeParam
+//@atd | TemplateNonTypeParam
+//@atd | TemplateTemplateParam
+//@atd ]
 //
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::VisitTemplateTypeParmDecl(const
-// TemplateTypeParmDecl *D) {
-//  if (D->wasDeclaredWithTypename())
-//    OS << " typename";
-//  else
-//    OS << " class";
-//  if (D->isParameterPack())
-//    OS << " ...";
-//  dumpName(D);
-//  if (D->hasDefaultArgument())
-//    dumpQualType(D->getDefaultArgument());
-//}
+/*
+template<class ATDWriter>
+int ASTExporter<ATDWriter>::TemplateTypeParmDeclTupleSize() {
+  return TypeDeclTupleSize() + 2;
+}
+*/
+
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpTemplateTypeParmDecl(const
+TemplateDecl *T, const TemplateTypeParmDecl *D) {
+
+  bool const has_default = D->hasDefaultArgument();
+  bool const used_typename = D->wasDeclaredWithTypename();
+  bool const is_pack = D->isParameterPack();
+
+  VisitTypeDecl(D);
+  ObjectScope Scope(OF, 4 + (int)has_default);
+  OF.emitTag("template_decl");
+  dumpPointer(T);
+  OF.emitTag("param_type");
+  OF.emitString("TemplateTypeParam");
+  OF.emitTag("with_typename");
+  OF.emitBoolean(used_typename);
+
+  unsigned int p_idx = D->getIndex();
+  OF.emitTag("index");
+  OF.emitInteger(p_idx);
+
+  p_idx = D->getDepth();
+  OF.emitTag("depth");
+  OF.emitInteger(p_idx);
+
+  OF.emitTag("is_parameter_pack");
+  OF.emitBoolean(is_pack);
+
+  if (has_default) {
+    OF.emitTag("default");
+    dumpQualType(D->getDefaultArgument());
+  }
+
+  return;
+
+}
+
+/*
+template<class ATDWriter>
+int ASTExporter<ATDWriter>::NonTypeTemplateParmDeclTupleSize() {
+  return ASTExporter::DeclaratorDeclTupleSize() + 2;
+}
+*/
+
+//@atd #define non_type_template_parm_tuple declarator_decl_tuple * template_param_kind * non_type_template_parm_info
+//@atd type non_type_template_parm_info = {
+//@atd   template_decl : pointer
+//@atd   index : int;
+//@atd   depth : int;
+//@atd   has_default : bool;
+//@atd   is_parameter_pack : bool;
+//@atd   type : qual_type;
+//@atd   ?default : expr_tuple option
+//@atd } <ocaml field_prefix="nttp_">
+template<class ATDWriter>
+void ASTExporter<ATDWriter>::dumpNonTypeTemplateParmDecl(const
+TemplateDecl *T, const NonTypeTemplateParmDecl *D) {
+
+    bool const has_default = D->hasDefaultArgument();
+    bool const is_pack = D->isParameterPack();
+
+    ASTExporter::VisitDeclaratorDecl(D);
+
+    ObjectScope Scope(OF, 4 + (int)has_default);
+    OF.emitTag("param_type");
+    OF.emitString("TemplateNonTypeParam");
+    OF.emitTag("template_decl");
+    dumpPointer(T);
+
+    unsigned int p_idx = D->getIndex();
+    OF.emitTag("index");
+    OF.emitInteger(p_idx);
+
+    p_idx = D->getDepth();
+    OF.emitTag("depth");
+    OF.emitInteger(p_idx);
+
+    OF.emitTag("has_default");
+    OF.emitBoolean(has_default);
+    OF.emitTag("is_parameter_pack");
+    OF.emitBoolean(is_pack);
+    OF.emitTag("type");
+    dumpQualType(D->getType());
+
+    if (has_default) {
+      Expr const *def = D->getDefaultArgument();
+      OF.emitTag("default");
+
+      SourceLocation start_tok = def->getBeginLoc();
+      SourceLocation end_tok = def->getEndLoc();
+      unsigned int end_tok_len = Lexer::MeasureTokenLength(end_tok, 
+              Context.getSourceManager(),
+              Context.getLangOpts());
+      SourceLocation end_tok_end = end_tok.getLocWithOffset(end_tok_len);
+
+      SourceRange default_arg_range(start_tok, end_tok_end);
+      OF.emitString(Lexer::getSourceText(
+                  CharSourceRange::getCharRange(default_arg_range),
+                  Context.getSourceManager(),
+                  Context.getLangOpts())
+              .str());
+    }
+
+    return;
+
+}
+
+/*
+template<class ATDWriter>
+int ASTExporter<ATDWriter>::TemplateTemplateParmDeclTupleSize() {
+  return NamedDeclTupleSize() + 2;
+}
+*/
+
+//@atd #define template_template_parm_tuple named_decl_tuple * template_param_kind * template_template_parm_info
+//@atd type template_template_parm_info = {
+//@atd   template_decl : pointer;
+//@atd   index : int
+//@atd   depth : int;
+//@atd   has_default : bool;
+//@atd   is_parameter_pack : bool;
+//@atd   ?default : pointer option;
+//@atd } <ocaml field_prefix="ttemp_">
+//
+//@atd type tparam = [
+//@atd   TTypeParam of template_type_parm_tuple
+//@atd | NTParam of non_type_template_parm_tuple
+//@atd | TTempParam of template_template_parm_tuple
+//@atd ]
+template<class ATDWriter>
+void ASTExporter<ATDWriter>::dumpTemplateTemplateParmDecl(const
+TemplateDecl *T, const TemplateTemplateParmDecl *D) {
+
+    bool const has_default = D->hasDefaultArgument();
+    bool const is_pack = D->isParameterPack();
+    unsigned int idx = D->getIndex();
+
+    VisitNamedDecl(D);
+
+    ObjectScope Scope(OF, 5 + (int)has_default);
+
+
+    OF.emitTag("param_type");
+    OF.emitString("TemplateTemplateParam");
+    OF.emitTag("template_decl");
+    dumpPointer(T);
+    OF.emitTag("index");
+    OF.emitInteger(idx);
+    idx = D->getDepth();
+    OF.emitTag("depth");
+    OF.emitInteger(idx);
+    OF.emitTag("has_default");
+    OF.emitBoolean(has_default);
+    OF.emitTag("is_parameter_pack");
+    OF.emitBoolean(is_pack);
+
+    if (has_default) {
+        TemplateName def_temp = D->getDefaultArgument().getArgument().getAsTemplateOrTemplatePattern();
+        TemplateDecl *decl = def_temp.getAsTemplateDecl();
+        OF.emitTag("default");
+        dumpPointer(decl);
+    }
+
+    return;
+
+}
+
 //
 // template <class ATDWriter>
 // void ASTExporter<ATDWriter>::VisitNonTypeTemplateParmDecl(const
@@ -3311,19 +3726,30 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
 
 //@atd type cxx_base_specifier = {
 //@atd   name : string;
+//@atd   ?template : pointer option
 //@atd   ~virtual : bool;
 //@atd } <ocaml field_prefix="xbs_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpCXXBaseSpecifier(
     const CXXBaseSpecifier &Base) {
   bool IsVirtual = Base.isVirtual();
-  ObjectScope Scope(OF, 1 + IsVirtual);
-
-  OF.emitTag("name");
   const CXXRecordDecl *RD =
       cast<CXXRecordDecl>(Base.getType()->getAs<RecordType>()->getDecl());
+  ClassTemplateDecl *T = RD->getDescribedClassTemplate();
+  bool describesTemplate = (T != nullptr);
+
+  ObjectScope Scope(OF, 1 + IsVirtual + describesTemplate);
+
+  OF.emitTag("name");
   OF.emitString(RD->getName());
+
+  if (describesTemplate) {
+      OF.emitTag("template");
+      OF.dumpPointer(T);
+  }
+
   OF.emitFlag("virtual", IsVirtual);
+  
 }
 
 template <class ATDWriter>
@@ -4576,6 +5002,7 @@ const char *ASTExporter<ATDWriter>::getCommandName(unsigned CommandID) {
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpFullComment(const FullComment *C) {
   FC = C;
+  comment_text = "";
   dumpComment(C);
   FC = 0;
 }
@@ -4585,36 +5012,50 @@ void ASTExporter<ATDWriter>::dumpFullComment(const FullComment *C) {
 #include <clang/AST/CommentNodes.inc>
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpComment(const Comment *C) {
+
+  VariantScope vScope(OF, std::string(C->getCommentKindName()));
+  if (dyn_cast<TextComment>(C)) {
+    comment_text += dyn_cast<TextComment>(C)->getText().str();
+  } else if (dyn_cast<VerbatimBlockLineComment>(C)) {
+    comment_text += dyn_cast<VerbatimBlockLineComment>(C)->getText().str();
+  } else if (dyn_cast<VerbatimLineComment>(C)) {
+    comment_text += dyn_cast<VerbatimLineComment>(C)->getText().str();
+  } 
+
   if (!C) {
     // We use a fixed NoComment node to represent null pointers
     C = NullPtrComment;
   }
-  VariantScope Scope(OF, std::string(C->getCommentKindName()));
-  {
-    TupleScope Scope(OF,
-                     ASTExporter::tupleSizeOfCommentKind(C->getCommentKind()));
-    ConstCommentVisitor<ASTExporter<ATDWriter>>::visit(C);
-  }
+  TupleScope Scope(OF,
+                ASTExporter::tupleSizeOfCommentKind(C->getCommentKind()));
+  ConstCommentVisitor<ASTExporter<ATDWriter>>::visit(C);
+
+  bool is_full_comment = (nullptr != dyn_cast<FullComment>(C));
+
+    if (is_full_comment) {
+        OF.emitTag("text");
+        OF.emitString(comment_text);
+    }
+
 }
 
 template <class ATDWriter>
 int ASTExporter<ATDWriter>::CommentTupleSize() {
-  return 2;
+  return 3;
 }
-//@atd #define comment_tuple comment_info * comment list
+//@atd #define comment_tuple comment_info * string list
 //@atd type comment_info = {
 //@atd   parent_pointer : pointer;
 //@atd   source_range : source_range;
+//@atd   ?text : string option;
 //@atd } <ocaml field_prefix="ci_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::visitComment(const Comment *C) {
-  {
-    ObjectScope ObjComment(OF, 2); // not covered by tests
+    ObjectScope ObjComment(OF, 3); // not covered by tests
     OF.emitTag("parent_pointer");
     dumpPointer(C);
     OF.emitTag("source_range");
     dumpSourceRange(C->getSourceRange());
-  }
   {
     Comment::child_iterator I = C->child_begin(), E = C->child_end();
     ArrayScope Scope(OF, std::distance(I, E));
@@ -4622,6 +5063,11 @@ void ASTExporter<ATDWriter>::visitComment(const Comment *C) {
       dumpComment(*I);
     }
   }
+  
+    
+
+    return;
+
 }
 
 // template <class ATDWriter>
@@ -5189,6 +5635,203 @@ void ASTExporter<ATDWriter>::VisitTypedefType(const TypedefType *T) {
   dumpPointer(T->getDecl());
 }
 
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::TemplateTypeParmTypeTupleSize() {
+    return TypeTupleSize() + 1;
+}
+
+//@atd #define template_type_parm_type_tuple type_tuple * template_type_parm_type_info
+//@atd type template_type_parm_type_info = {
+//@atd   id : string;
+//@atd   depth : int;
+//@atd   index : int;
+//@atd   is_pack : bool;
+//@atd   parm : pointer;
+//@atd   ?desugared_type : qual_type option
+//@atd } <ocaml field_prefix="ttpti_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitTemplateTypeParmType(const TemplateTypeParmType *T) {
+    VisitType(T);
+    
+    bool isSugared = T->isSugared();
+    ObjectScope Scope(OF, 4 + isSugared);
+
+    OF.emitTag("id");
+
+    IdentifierInfo *id = T->getIdentifier();
+    if (id) {
+        OF.emitString(id->getName().str());
+    } else {
+        OF.emitString("");
+    }
+
+    OF.emitTag("depth");
+    OF.emitInteger(T->getDepth());
+
+    OF.emitTag("index");
+    OF.emitInteger(T->getIndex());
+
+    OF.emitTag("is_pack");
+    OF.emitBoolean(T->isParameterPack());
+
+    OF.emitTag("parm");
+    dumpPointer(T->getDecl());
+
+    if (isSugared) {
+        OF.emitTag("desugared_type");
+        dumpQualType(T->desugar());
+    }
+
+    return;
+
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::SubstTemplateTypeParmTypeTupleSize() {
+    return TypeTupleSize() + 1;
+}
+
+//@atd #define subst_template_type_tuple type_tuple * subst_template_type_info
+//@atd type subst_template_type_info = {
+//@atd   replaced : pointer;
+//@atd   replacement_type : qual_type;
+//@atd   ?desugared_type : qual_type option
+//@atd } <ocaml field_prefix="stti_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitSubstTemplateTypeParmType(const SubstTemplateTypeParmType *T) {
+    VisitType(T);
+
+    bool isSugared = T->isSugared();
+    ObjectScope Scope(OF, 2 + isSugared);
+
+    OF.emitTag("replaced");
+    dumpPointerToType(T->getReplacedParameter());
+
+    OF.emitTag("replacement_type");
+    dumpQualType(T->getReplacementType());
+
+    if (isSugared) {
+        OF.emitTag("desugared_type");
+        dumpQualType(T->desugar());
+    }
+
+    return;
+
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::TemplateSpecializationTypeTupleSize() {
+    return TypeTupleSize() + 1;
+}
+
+//@atd #define template_specialization_type_tuple type_tuple * template_specialization_type_info
+//@atd type template_specialization_type_info = {
+//@atd   type_alias : bool;
+//@atd   template_decl : pointer;
+//@atd   ?aliased_type : qual_type option;
+//@atd   ?desugared_type : qual_type option;
+//@atd   ~specialization_args : template_specialization_arg_info list
+//@atd } <ocaml field_prefix="tsti_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitTemplateSpecializationType(const TemplateSpecializationType *T) {
+    VisitType(T);
+
+    bool isSugared = T->isSugared();
+    bool isAlias = T->isTypeAlias();
+    unsigned int nArgs = T->getNumArgs();
+    bool hasArgs = nArgs > 0;
+
+    ObjectScope Scope(OF, 2 + isSugared + isAlias + hasArgs);
+
+    OF.emitTag("type_alias");
+    OF.emitBoolean(isAlias);
+
+    OF.emitTag("template_decl");
+    dumpPointer(T->getTemplateName().getAsTemplateDecl());
+
+    if (isAlias) {
+        OF.emitTag("aliased_type");
+        dumpQualType(T->getAliasedType());
+    }
+
+    if (isSugared) {
+        OF.emitTag("desugared_type");
+        dumpQualType(T->desugar());
+    }
+
+    TemplateArgument const *args = T->getArgs();
+    if (args && hasArgs) {
+        OF.emitTag("specialization_args");
+        ArrayScope aScope(OF, nArgs);
+        for (unsigned int arg_idx = 0; arg_idx < nArgs; ++arg_idx) {
+            dumpTemplateArgument(args[arg_idx]);
+        }
+    }
+
+    return;
+
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::InjectedClassNameTypeTupleSize() {
+    return TypeTupleSize() + 1;
+}
+
+//@atd #define injected_class_type_tuple type_tuple * injected_class_type_info
+//@atd type injected_class_type_info = {
+//@atd   injected_specialization_type : qual_type;
+//@atd   ?desugared_type : qual_type option;
+//@atd } <ocaml field_prefix="icti_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitInjectedClassNameType(const InjectedClassNameType *T) {
+    VisitType(T);
+
+    bool isSugared = T->isSugared();
+    ObjectScope Scope(OF, 1 + isSugared);
+
+    OF.emitTag("injected_specialization_type");
+    dumpQualType(T->getInjectedSpecializationType());
+
+    if (isSugared) {
+        OF.emitTag("desugared_type");
+        dumpQualType(T->desugar());
+    }
+
+    return;
+
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::DependentNameTypeTupleSize() {
+    return TypeTupleSize() + 1;
+}
+
+//@atd #define dependent_name_type_tuple type_tuple * dependent_name_type_info
+//@atd type dependent_name_type_info = {
+//@atd   identifier : string;
+//@atd   ?desugared_type : qual_type option
+//@atd } <ocaml field_prefix="dnti_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitDependentNameType(const DependentNameType *T) {
+    VisitType(T);
+
+    bool isSugared = T->isSugared();
+    ObjectScope Scope(OF, 1 + isSugared);
+
+    OF.emitTag("identifier");
+    OF.emitString(T->getIdentifier()->getName().str());
+
+    if (isSugared) {
+        OF.emitTag("desugared_type");
+        dumpQualType(T->desugar());
+    }
+
+    return;
+
+}
+
+
+
 //===----------------------------------------------------------------------===//
 //  Attr dumping methods.
 //===----------------------------------------------------------------------===//
@@ -5218,6 +5861,7 @@ int ASTExporter<ATDWriter>::AttrTupleSize() {
 //@atd type attribute_info = {
 //@atd   pointer : pointer;
 //@atd   source_range : source_range;
+//@atd   attr : string;
 //@atd } <ocaml field_prefix="ai_">
 //@atd type attr_tuple = attribute_info
 template <class ATDWriter>
@@ -5227,6 +5871,8 @@ void ASTExporter<ATDWriter>::VisitAttr(const Attr *A) {
   dumpPointer(A);
   OF.emitTag("source_range");
   dumpSourceRange(A->getRange());
+  OF.emitTag("attr");
+  OF.emitString(std::string(A->getSpelling());
 }
 
 // Default aliases for generating variant components

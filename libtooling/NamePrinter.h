@@ -9,26 +9,26 @@
 #include <clang/AST/DeclVisitor.h>
 #include <clang/Basic/SourceManager.h>
 
-#include "atdlib/ATDWriter.h"
+#include "jsonlib/JSONWriter.h"
 namespace ASTLib {
 
 using namespace clang;
-template <class ATDWriter>
-class NamePrinter : public ConstDeclVisitor<NamePrinter<ATDWriter>> {
-  typedef typename ATDWriter::ObjectScope ObjectScope;
-  typedef typename ATDWriter::ArrayScope ArrayScope;
-  typedef typename ATDWriter::TupleScope TupleScope;
-  typedef typename ATDWriter::VariantScope VariantScope;
+template <class JSONWriter>
+class NamePrinter : public ConstDeclVisitor<NamePrinter<JSONWriter>> {
+  typedef typename JSONWriter::ObjectScope ObjectScope;
+  typedef typename JSONWriter::ArrayScope ArrayScope;
+  typedef typename JSONWriter::TupleScope TupleScope;
+  typedef typename JSONWriter::VariantScope VariantScope;
 
   const SourceManager &SM;
-  ATDWriter &OF;
+  JSONWriter &OF;
 
   PrintingPolicy getPrintingPolicy();
   void printTemplateArgList(llvm::raw_ostream &OS,
                             const ArrayRef<TemplateArgument> Args);
 
  public:
-  NamePrinter(const SourceManager &SM, ATDWriter &OF) : SM(SM), OF(OF) {}
+  NamePrinter(const SourceManager &SM, JSONWriter &OF) : SM(SM), OF(OF) {}
 
   // implementation is inspired by NamedDecl::printQualifiedName
   // but with better handling for anonymous structs,unions and namespaces
@@ -58,8 +58,8 @@ uint64_t fnv64Hash(llvm::raw_svector_ostream &OS) {
 }
 
 const int templateLengthThreshold = 40;
-template <class ATDWriter>
-void NamePrinter<ATDWriter>::printTemplateArgList(
+template <class JSONWriter>
+void NamePrinter<JSONWriter>::printTemplateArgList(
     llvm::raw_ostream &OS, const ArrayRef<TemplateArgument> Args) {
   SmallString<64> Buf;
   llvm::raw_svector_ostream tmpOS(Buf);
@@ -74,8 +74,8 @@ void NamePrinter<ATDWriter>::printTemplateArgList(
   }
 }
 
-template <class ATDWriter>
-void NamePrinter<ATDWriter>::printDeclName(const NamedDecl &D) {
+template <class JSONWriter>
+void NamePrinter<JSONWriter>::printDeclName(const NamedDecl &D) {
   const DeclContext *Ctx = D.getDeclContext();
   SmallVector<const NamedDecl *, 8> Contexts;
   Contexts.push_back(&D);
@@ -104,17 +104,17 @@ void NamePrinter<ATDWriter>::printDeclName(const NamedDecl &D) {
   ArrayScope aScope(OF, Contexts.size());
   // dump list in reverse
   for (const Decl *Ctx : Contexts) {
-    ConstDeclVisitor<NamePrinter<ATDWriter>>::Visit(Ctx);
+    ConstDeclVisitor<NamePrinter<JSONWriter>>::Visit(Ctx);
   }
 }
 
-template <class ATDWriter>
-void NamePrinter<ATDWriter>::VisitNamedDecl(const NamedDecl *D) {
+template <class JSONWriter>
+void NamePrinter<JSONWriter>::VisitNamedDecl(const NamedDecl *D) {
   OF.emitString(D->getNameAsString());
 }
 
-template <class ATDWriter>
-void NamePrinter<ATDWriter>::VisitNamespaceDecl(const NamespaceDecl *ND) {
+template <class JSONWriter>
+void NamePrinter<JSONWriter>::VisitNamespaceDecl(const NamespaceDecl *ND) {
   if (ND->isAnonymousNamespace()) {
     PresumedLoc PLoc = SM.getPresumedLoc(ND->getLocation());
     std::string file = "invalid_loc";
@@ -128,8 +128,8 @@ void NamePrinter<ATDWriter>::VisitNamespaceDecl(const NamespaceDecl *ND) {
   }
 }
 
-template <class ATDWriter>
-void NamePrinter<ATDWriter>::VisitTagDecl(const TagDecl *D) {
+template <class JSONWriter>
+void NamePrinter<JSONWriter>::VisitTagDecl(const TagDecl *D) {
   // heavily inspired by clang's TypePrinter::printTag() function
   SmallString<64> Buf;
   llvm::raw_svector_ostream StrOS(Buf);
@@ -159,8 +159,8 @@ void NamePrinter<ATDWriter>::VisitTagDecl(const TagDecl *D) {
   OF.emitString(StrOS.str());
 }
 
-template <class ATDWriter>
-void NamePrinter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *FD) {
+template <class JSONWriter>
+void NamePrinter<JSONWriter>::VisitFunctionDecl(const FunctionDecl *FD) {
   std::string template_str = "";
   // add instantiated template arguments for readability
   if (const TemplateArgumentList *TemplateArgs =
@@ -173,8 +173,8 @@ void NamePrinter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *FD) {
   OF.emitString(FD->getNameAsString() + template_str);
 }
 
-template <class ATDWriter>
-PrintingPolicy NamePrinter<ATDWriter>::getPrintingPolicy() {
+template <class JSONWriter>
+PrintingPolicy NamePrinter<JSONWriter>::getPrintingPolicy() {
   // configure what to print
   LangOptions LO;
   PrintingPolicy Policy(LO);

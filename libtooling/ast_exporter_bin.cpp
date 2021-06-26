@@ -5,11 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-/**
- * Clang tool to export an AST of clang into Json, Yojson, and Biniou
- * while conforming to the inlined ATD specifications.
- */
-
 #include "ASTExporter.h"
 
 #include <clang/Tooling/CommonOptionsParser.h>
@@ -63,14 +58,6 @@ int main(int argc, const char **argv) {
   case json:
     factory.reset(new ASTPluginLib::SimpleFrontendActionFactory<
                   ASTLib::JsonExporterASTAction>(astExporterOptions));
-    break;
-  case yojson:
-    factory.reset(new ASTPluginLib::SimpleFrontendActionFactory<
-                  ASTLib::YojsonExporterASTAction>(astExporterOptions));
-    break;
-  case biniou:
-    factory.reset(new ASTPluginLib::SimpleFrontendActionFactory<
-                  ASTLib::BiniouExporterASTAction>(astExporterOptions));
     break;
   }
 

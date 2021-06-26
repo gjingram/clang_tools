@@ -12,7 +12,7 @@ HEADERS+=SimplePluginASTAction.h FileUtils.h AttrParameterVectorStream.h
 OBJS+=SimplePluginASTAction.o FileUtils.o AttrParameterVectorStream.o
 
 # ASTExporter
-HEADERS+=atdlib/ATDWriter.h ASTExporter.h NamePrinter.h
+HEADERS+=jsonlib/JSONWriter.h ASTExporter.h NamePrinter.h
 OBJS+=ASTExporter.o
 
 # Json

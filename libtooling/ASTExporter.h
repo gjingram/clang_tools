@@ -26,7 +26,9 @@
  * The general layout should be maintained to make future merging easier.
  */
 
-#pragma once
+#ifndef ASTEXPORTER_H
+#define ASTEXPORTER_H
+
 #include <memory>
 
 #include <clang/AST/ASTConsumer.h>
@@ -6041,3 +6043,5 @@ typedef ASTPluginLib::SimplePluginASTAction<
     BiniouExporterASTAction;
 
 } // end of namespace ASTLib
+
+#endif

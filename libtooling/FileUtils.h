@@ -5,9 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#pragma once
+#ifndef FILE_UTILS_H
+#define FILE_UTILS_H
 
-#include <clang/AST/Decl.h>
+#include "clang/AST/Decl.h"
 #include <string>
 
 namespace FileUtils {
@@ -32,3 +33,5 @@ std::string makeRelativePath(const std::string &repoRoot,
                              const std::string &path);
 
 } // namespace FileUtils
+
+#endif

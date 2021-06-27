@@ -57,7 +57,6 @@
 #include "AttrParameterVectorStream.h"
 #include "NamePrinter.h"
 #include "SimplePluginASTAction.h"
-#include "atdlib/ATDWriter.h"
 #include <iostream>
 #include <string>
 
@@ -71,17 +70,15 @@ struct ASTExporterOptions : ASTPluginLib::PluginASTOptionsBase {
   bool withPointers = true;
   bool dumpComments = true;
   bool useMacroExpansionLocation = true;
-  ATDWriter::ATDWriterOptions atdWriterOptions = {
-      .useYojson = false,
-      .prettifyJson = false,
+  JSONWriter::JSONWriterOptions jsonWriterOptions = {
+      .prettifyJson = false
   };
 
   void loadValuesFromEnvAndMap(
       const ASTPluginLib::PluginASTOptionsBase::argmap_t &map) {
     ASTPluginLib::PluginASTOptionsBase::loadValuesFromEnvAndMap(map);
     loadBool(map, "AST_WITH_POINTERS", withPointers);
-    loadBool(map, "USE_YOJSON", atdWriterOptions.useYojson);
-    loadBool(map, "PRETTIFY_JSON", atdWriterOptions.prettifyJson);
+    loadBool(map, "PRETTIFY_JSON", jsonWriterOptions.prettifyJson);
   }
 };
 
@@ -161,7 +158,7 @@ struct TupleSizeBase {
     return static_cast<Impl *>(this)->BASE##TupleSize(); \
   }
 #define ABSTRACT_TYPE(DERIVED, BASE) TYPE(DERIVED, BASE)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
 
   int tupleSizeOfTypeClass(const Type::TypeClass typeClass) {
     switch (typeClass) {
@@ -169,9 +166,9 @@ struct TupleSizeBase {
   case Type::DERIVED:       \
     return static_cast<Impl *>(this)->DERIVED##TypeTupleSize();
 #define ABSTRACT_TYPE(DERIVED, BASE)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
     }
-    llvm_unreachable("Type that isn't part of TypeNodes.def!");
+    llvm_unreachable("Type that isn't part of TypeNodes.inc!");
   }
 
   // Attributes
@@ -191,7 +188,7 @@ struct TupleSizeBase {
   }
 };
 
-typedef ATDWriter::JsonWriter<raw_ostream> JsonWriter;
+typedef JSONWriter::JsonWriter<raw_ostream> JsonWriter;
 
 template <class ATDWriter = JsonWriter>
 class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
@@ -238,7 +235,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   ASTExporter(raw_ostream &OS,
               ASTContext &Context,
               const ASTExporterOptions &Opts)
-      : OF(OS, Opts.atdWriterOptions),
+      : OF(OS, Opts.jsonWriterOptions),
         Context(Context),
         Options(Opts),
         Mangler(
@@ -1309,38 +1306,38 @@ void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
   // new info in InputKind that can still be used, e.g. whether the source is
   // preprocessed (PP), or precompiled.
   switch (kind.getLanguage()) {
-  case InputKind::Unknown:
-    OF.emitSimpleVariant("IK_None");
+  case Language::Unknown:
+    OF.emitSimpleVariant("Lang_None");
     break;
-  case InputKind::Asm:
-    OF.emitSimpleVariant("IK_Asm");
+  case Language::Asm:
+    OF.emitSimpleVariant("Lang_Asm");
     break;
-  case InputKind::C:
-    OF.emitSimpleVariant("IK_C");
+  case Language::C:
+    OF.emitSimpleVariant("Lang_C");
     break;
-  case InputKind::CXX:
-    OF.emitSimpleVariant("IK_CXX");
+  case Language::CXX:
+    OF.emitSimpleVariant("Lang_CXX");
     break;
-  case InputKind::ObjC:
-    OF.emitSimpleVariant("IK_ObjC");
+  case Language::ObjC:
+    OF.emitSimpleVariant("Lang_ObjC");
     break;
-  case InputKind::ObjCXX:
-    OF.emitSimpleVariant("IK_ObjCXX");
+  case Language::ObjCXX:
+    OF.emitSimpleVariant("Lang_ObjCXX");
     break;
-  case InputKind::OpenCL:
-    OF.emitSimpleVariant("IK_OpenCL");
+  case Language::OpenCL:
+    OF.emitSimpleVariant("Lang_OpenCL");
     break;
-  case InputKind::CUDA:
-    OF.emitSimpleVariant("IK_CUDA");
+  case Language::CUDA:
+    OF.emitSimpleVariant("Lang_CUDA");
     break;
-  case InputKind::RenderScript:
-    OF.emitSimpleVariant("IK_RenderScript");
+  case Language::RenderScript:
+    OF.emitSimpleVariant("Lang_RenderScript");
     break;
-  case InputKind::LLVM_IR:
-    OF.emitSimpleVariant("IK_LLVM_IR");
+  case Language::LLVM_IR:
+    OF.emitSimpleVariant("Lang_LLVM_IR");
     break;
-  case InputKind::HIP:
-    OF.emitSimpleVariant("IK_HIP");
+  case Language::HIP:
+    OF.emitSimpleVariant("Lang_HIP");
     break;
   }
 }
@@ -3747,7 +3744,7 @@ void ASTExporter<ATDWriter>::dumpCXXBaseSpecifier(
 
   if (describesTemplate) {
       OF.emitTag("template");
-      OF.dumpPointer(T);
+      dumpPointer(T);
   }
 
   OF.emitFlag("virtual", IsVirtual);
@@ -5194,7 +5191,7 @@ void ASTExporter<ATDWriter>::visitComment(const Comment *C) {
 #define TYPE(DERIVED, BASE) //@atd #define @DERIVED@_type_tuple @BASE@_tuple
 #define ABSTRACT_TYPE(DERIVED, BASE) TYPE(DERIVED, BASE)
 TYPE(None, Type)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
 #undef TYPE
 #undef ABSTRACT_TYPE
 
@@ -5874,7 +5871,7 @@ void ASTExporter<ATDWriter>::VisitAttr(const Attr *A) {
   OF.emitTag("source_range");
   dumpSourceRange(A->getRange());
   OF.emitTag("attr");
-  OF.emitString(std::string(A->getSpelling());
+  OF.emitString(std::string(A->getSpelling()));
 }
 
 // Default aliases for generating variant components
@@ -6000,10 +5997,10 @@ void ASTExporter<ATDWriter>::VisitVisibilityAttr(const VisibilityAttr *A) {
 #define TYPE(CLASS, PARENT) //@atd   | CLASS@@Type of (@CLASS@_type_tuple)
 #define ABSTRACT_TYPE(CLASS, PARENT)
 TYPE(None, Type)
-#include <clang/AST/TypeNodes.def>
+#include <clang/AST/TypeNodes.inc>
 //@atd ] <ocaml repr="classic" validator="Clang_ast_visit.visit_type">
 
-template <class ATDWriter = JsonWriter, bool ForceYojson = false>
+template <class ATDWriter = JsonWriter>
 class ExporterASTConsumer : public ASTConsumer {
  private:
   std::shared_ptr<ASTExporterOptions> options;
@@ -6019,9 +6016,6 @@ class ExporterASTConsumer : public ASTConsumer {
                       std::shared_ptr<PreprocessorHandlerData> sharedData,
                       std::unique_ptr<raw_ostream> &&OS)
       : options(options), OS(std::move(OS)) {
-    if (ForceYojson) {
-      options->atdWriterOptions.useYojson = true;
-    }
   }
 
   virtual void HandleTranslationUnit(ASTContext &Context) {
@@ -6032,15 +6026,8 @@ class ExporterASTConsumer : public ASTConsumer {
 };
 
 typedef ASTPluginLib::SimplePluginASTAction<
-    ASTLib::ExporterASTConsumer<ASTLib::JsonWriter, false>>
+    ASTLib::ExporterASTConsumer<ASTLib::JsonWriter>>
     JsonExporterASTAction;
-typedef ASTPluginLib::SimplePluginASTAction<
-    ASTLib::ExporterASTConsumer<ASTLib::JsonWriter, true>>
-    YojsonExporterASTAction;
-typedef ASTPluginLib::SimplePluginASTAction<
-    ASTLib::ExporterASTConsumer<ATDWriter::BiniouWriter<llvm::raw_ostream>,
-                                true>>
-    BiniouExporterASTAction;
 
 } // end of namespace ASTLib
 

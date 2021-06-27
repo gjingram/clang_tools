@@ -16,14 +16,12 @@
 
 static llvm::cl::OptionCategory astExporterCategory("ast_exporter_bin");
 
-enum Mode { json, yojson, biniou };
+enum Mode { json };
 
 static llvm::cl::opt<Mode> astExporterMode(
     "ast-exporter-mode",
     llvm::cl::desc("Mode of operation"),
-    llvm::cl::values(clEnumVal(json, "json output"),
-                     clEnumVal(yojson, "yojson output"),
-                     clEnumVal(biniou, "biniou output")),
+    llvm::cl::values(clEnumVal(json, "json output")),
     llvm::cl::cat(astExporterCategory));
 
 static llvm::cl::opt<std::string> astExporterOutput(

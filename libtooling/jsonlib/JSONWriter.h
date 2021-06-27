@@ -318,14 +318,14 @@ class JsonEmitter {
         nextElementNeedsNewLine_(false),
         previousElementNeedsComma_(false),
         previousElementIsVariantTag_(false),
-        shouldSimpleVariantsBeEmittedAsStrings(!opts.useYojson) {}
+        shouldSimpleVariantsBeEmittedAsStrings(true) {}
 
   void tab() {
     if (previousElementIsVariantTag_) {
       if (options_.prettifyJson) {
-        os_ << (options_.useYojson ? COLONWITHSPACES : COMMAWITHSPACES);
+        os_ << (COMMAWITHSPACES);
       } else {
-        os_ << (options_.useYojson ? COLON : COMMA);
+        os_ << (COMMA);
       }
     } else if (previousElementNeedsComma_) {
       os_ << COMMA;
@@ -456,18 +456,18 @@ class JsonEmitter {
   void enterObject() { enterContainer(LBRACE); }
   void enterObject(int size) { enterObject(); }
   void leaveObject() { leaveContainer(RBRACE); }
-  void enterTuple() { enterContainer(options_.useYojson ? LPAREN : LBRACKET); }
+  void enterTuple() { enterContainer(LBRACKET); }
   void enterTuple(int size) { enterTuple(); }
-  void leaveTuple() { leaveContainer(options_.useYojson ? RPAREN : RBRACKET); }
+  void leaveTuple() { leaveContainer(RBRACKET); }
   void enterVariant() {
-    enterContainer(options_.useYojson ? LANGLE : LBRACKET);
+    enterContainer(LBRACKET);
     // cancel indent
     indentLevel_--;
     nextElementNeedsNewLine_ = false;
   }
   void leaveVariant() {
     nextElementNeedsNewLine_ = false;
-    leaveContainer(options_.useYojson ? RANGLE : RBRACKET);
+    leaveContainer(RBRACKET);
     indentLevel_++;
   }
 };

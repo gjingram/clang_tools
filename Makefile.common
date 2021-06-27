@@ -61,6 +61,8 @@ CLANG_TOOL_LIBS := \
     -lclangLex \
     -lclangBasic
 
+include $(LEVEL)/Makefile.rules
+
 # Local Variables:
 # mode: makefile
 # End:

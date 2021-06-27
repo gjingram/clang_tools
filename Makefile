@@ -8,17 +8,14 @@ include Makefile.common
 
 .PHONY: all
 all:
-	$(MAKE) -C libtooling/atdlib all
 	$(MAKE) -C libtooling all
 
 .PHONY: test
 test: all
-	$(MAKE) -C libtooling/atdlib test
 	$(MAKE) -C libtooling test
 
 .PHONY: clean
 clean:
-	$(MAKE) -C libtooling/atdlib clean
 	$(MAKE) -C libtooling clean
 
 .PHONY: fmt_all

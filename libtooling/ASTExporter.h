@@ -72,7 +72,7 @@ struct ASTExporterOptions : ASTPluginLib::PluginASTOptionsBase {
   bool dumpComments = true;
   bool useMacroExpansionLocation = true;
   JSONWriter::JSONWriterOptions jsonWriterOptions = {
-      .prettifyJson = false
+      .prettifyJson = true
   };
 
   void loadValuesFromEnvAndMap(
@@ -318,86 +318,323 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
 
   // Decls
   DECLARE_VISITOR(Decl)
-  //NO_IMPL(BlockDecl)
   DECLARE_VISITOR(DeclContext)
+  NO_IMPL(AccessSpecDecl)
+  NO_IMPL(BlockDecl)
   DECLARE_VISITOR(CapturedDecl)
-  DECLARE_VISITOR(LinkageSpecDecl)
-  DECLARE_VISITOR(NamespaceDecl)
-  //DECLARE_VISITOR(ObjCContainerDecl)
-  DECLARE_VISITOR(TagDecl)
-  DECLARE_VISITOR(TypeDecl)
-  DECLARE_VISITOR(TranslationUnitDecl)
-  DECLARE_VISITOR(NamedDecl)
-  DECLARE_VISITOR(ValueDecl)
-  DECLARE_VISITOR(TypedefDecl)
-  DECLARE_VISITOR(EnumDecl)
-  DECLARE_VISITOR(RecordDecl)
-  DECLARE_VISITOR(EnumConstantDecl)
-  DECLARE_VISITOR(IndirectFieldDecl)
-  DECLARE_VISITOR(FunctionDecl)
-  DECLARE_VISITOR(FieldDecl)
-  DECLARE_VISITOR(VarDecl)
-  // no use for these yet, ignore them
-  // DECLARE_VISITOR(FileScopeAsmDecl)
+  NO_IMPL(ClassScopeFunctionSpecializationDecl)
+  NO_IMPL(EmptyDecl)
+  NO_IMPL(ExportDecl)
+  NO_IMPL(ExternCContextDecl)
+  NO_IMPL(FileScopeAsmDecl)
+  DECLARE_VISITOR(FriendDecl)
+  NO_IMPL(FriendTemplateDecl)
   DECLARE_VISITOR(ImportDecl)
-
-  // C++ Decls
-  DECLARE_VISITOR(UsingDirectiveDecl)
+  NO_IMPL(LifetimeExtendedTemporaryDecl)
+  DECLARE_VISITOR(LinkageSpecDecl)
+  DECLARE_VISITOR(NamedDecl)
+  NO_IMPL(LabelDecl)
+  DECLARE_VISITOR(NamespaceDecl)
   DECLARE_VISITOR(NamespaceAliasDecl)
-  DECLARE_VISITOR(CXXRecordDecl)
-  DECLARE_VISITOR(ClassTemplateSpecializationDecl)
-  DECLARE_VISITOR(CXXMethodDecl)
-  DECLARE_VISITOR(CXXConstructorDecl)
+  NO_IMPL(ObjCCompatibleAliasDecl)
+  NO_IMPL(ObjCContainerDecl)
+  NO_IMPL(ObjCCategoryDecl)
+  NO_IMPL(ObjCImplDecl)
+  NO_IMPL(ObjCCategoryImplDecl)
+  NO_IMPL(ObjCImplementationDecl)
+  NO_IMPL(ObjCInterfaceDecl)
+  NO_IMPL(ObjCProtocolDecl)
+  NO_IMPL(ObjCMethodDecl)
+  NO_IMPL(ObjCPropertyDecl)
+  NO_IMPL(TemplateDecl)
+  NO_IMPL(BuiltinTemplateDecl)
+  NO_IMPL(ConceptDecl)
+  NO_IMPL(RedeclarableTemplateDecl)
   DECLARE_VISITOR(ClassTemplateDecl)
   DECLARE_VISITOR(FunctionTemplateDecl)
-  DECLARE_VISITOR(FriendDecl)
-  DECLARE_VISITOR(TypeAliasDecl)
   DECLARE_VISITOR(TypeAliasTemplateDecl)
+  NO_IMPL(VarTemplateDecl)
+  NO_IMPL(TemplateTemplateParmDecl)
+  DECLARE_VISITOR(TypeDecl)
+  DECLARE_VISITOR(TagDecl)
+  DECLARE_VISITOR(RecordDecl)
+  DECLARE_VISITOR(EnumDecl)
+  DECLARE_VISITOR(CXXRecordDecl)
+  DECLARE_VISITOR(ClassTemplateSpecializationDecl)
+  // Custom
+  // NO_IMPL(ClassTemplatePartialSpecialization)
+  NO_IMPL(TemplateTypeParmDecl)
+  NO_IMPL(TypedefNameDecl)
+  NO_IMPL(ObjCTypeParamDecl)
+  DECLARE_VISITOR(TypeAliasDecl)
+  DECLARE_VISITOR(TypedefDecl)
+  NO_IMPL(UnresolvedUsingTypenameDecl)
+  NO_IMPL(UsingDecl)
+  DECLARE_VISITOR(UsingDirectiveDecl)
+  NO_IMPL(UsingPackDecl)
+  NO_IMPL(UsingShadowDecl)
+  NO_IMPL(ConstructorUsingShadowDecl)
+  DECLARE_VISITOR(ValueDecl)
+  NO_IMPL(BindingDecl)
+  NO_IMPL(DeclaratorDecl)
+  DECLARE_VISITOR(FieldDecl)
+  NO_IMPL(ObjCAtDefsFieldDecl)
+  NO_IMPL(ObjCIvarDecl)
+  DECLARE_VISITOR(FunctionDecl)
+  NO_IMPL(CXXDeductionGuideDecl)
+  DECLARE_VISITOR(CXXMethodDecl)
+  DECLARE_VISITOR(CXXConstructorDecl)
+  NO_IMPL(CXXConversionDecl)
+  NO_IMPL(CXXDestructorDecl)
+  NO_IMPL(MSPropertyDecl)
+  NO_IMPL(NonTypeTemplateParmDecl)
+  DECLARE_VISITOR(VarDecl)
+  NO_IMPL(DecompositionDecl)
+  NO_IMPL(ImplicitParamDecl)
+  NO_IMPL(OMPCapturedExprDecl)
+  NO_IMPL(ParmVarDecl)
+  NO_IMPL(VarTemplateSpecializationDecl)
+  NO_IMPL(VarTemplatePartialSpecializationDecl)
+  DECLARE_VISITOR(EnumConstantDecl)
+  DECLARE_VISITOR(IndirectFieldDecl)
+  NO_IMPL(OMPDeclareMapperDecl)
+  NO_IMPL(OMPDeclareReductionDecl)
+  NO_IMPL(UnresolvedUsingValueDecl)
+  NO_IMPL(OMPAllocateDecl)
+  NO_IMPL(OMPRequiresDecl)
+  NO_IMPL(OMPThreadPrivateDecl)
+  NO_IMPL(ObjCPropertyImplDecl)
+  NO_IMPL(PragmaCommentDecl)
+  NO_IMPL(PragmaDetectMismatchDecl)
+  NO_IMPL(RequiresExprBodyDecl)
+  NO_IMPL(StaticAssertDecl)
+  DECLARE_VISITOR(TranslationUnitDecl)
 
   void VisitClassTemplatePartialSpecializationDecl(
       const ClassTemplatePartialSpecializationDecl *D);
 
-  //NO_IMPL(ObjCIvarDecl)
-  //NO_IMPL(ObjCMethodDecl)
-  //NO_IMPL(ObjCCategoryDecl)
-  //NO_IMPL(ObjCProtocolDecl)
-  //NO_IMPL(ObjCInterfaceDecl)
-  //NO_IMPL(ObjCImplementationDecl)
-  //NO_IMPL(ObjCCompatibleAliasDecl)
-  //NO_IMPL(ObjCPropertyDecl)
-  //NO_IMPL(ObjCPropertyImplDecl)
-
   // Stmts.
   DECLARE_VISITOR(Stmt)
-  //DECLARE_VISITOR(AttributedStmt)
-  //NO_IMPL(CXXCatchStmt)
+  NO_IMPL(AsmStmt)
+  NO_IMPL(GCCAsmStmt)
+  NO_IMPL(MSAsmStmt)
+  NO_IMPL(BreakStmt)
+  NO_IMPL(CXXCatchStmt)
+  NO_IMPL(CXXForRangeStmt)
+  NO_IMPL(CXXTryStmt)
+  NO_IMPL(CapturedStmt)
+  NO_IMPL(CompoundStmt)
+  NO_IMPL(ContinueStmt)
+  NO_IMPL(CoreturnStmt)
+  NO_IMPL(CoroutineBodyStmt)
   DECLARE_VISITOR(DeclStmt)
-  //NO_IMPL(GotoStmt)
-  //NO_IMPL(IfStmt)
-  //NO_IMPL(LabelStmt)
-  //NO_IMPL(SwitchStmt)
+  NO_IMPL(DoStmt)
+  NO_IMPL(ForStmt)
+  NO_IMPL(GotoStmt)
+  NO_IMPL(IfStmt)
+  NO_IMPL(IndirectGotoStmt)
+  NO_IMPL(MSDependentExistsStmt)
+  NO_IMPL(NullStmt)
+  NO_IMPL(OMPExecutableDirective)
+  NO_IMPL(OMPAtomicDirective)
+  NO_IMPL(OMPBarrierDirective)
+  NO_IMPL(OMPCancelDirective)
+  NO_IMPL(OMPCancellationPointDirective)
+  NO_IMPL(OMPCriticalDirective)
+  NO_IMPL(OMPFlushDirective)
+  NO_IMPL(OMPLoopDirective)
+  NO_IMPL(OMPDistributeDirective)
+  NO_IMPL(OMPDistributeParallelForDirective)
+  NO_IMPL(OMPDistributeParallelForSimdDirective)
+  NO_IMPL(OMPDistributeSimdDirective)
+  NO_IMPL(OMPForDirective)
+  NO_IMPL(OMPForSimdDirective)
+  NO_IMPL(OMPMasterTaskLoopDirective)
+  NO_IMPL(OMPMasterTaskLoopSimdDirective)
+  NO_IMPL(OMPParallelForDirective)
+  NO_IMPL(OMPParallelForSimdDirective)
+  NO_IMPL(OMPParallelMasterTaskLoopDirective)
+  NO_IMPL(OMPParallelMasterTaskLoopSimdDirective)
+  NO_IMPL(OMPSimdDirective)
+  NO_IMPL(OMPTargetParallelForSimdDirective)
+  NO_IMPL(OMPTargetSimdDirective)
+  NO_IMPL(OMPTargetTeamsDistributeDirective)
+  NO_IMPL(OMPTargetTeamsDistributeParallelForDirective)
+  NO_IMPL(OMPTargetTeamsDistributeParallelForSimdDirective)
+  NO_IMPL(OMPTargetTeamsDistributeSimdDirective)
+  NO_IMPL(OMPTaskLoopDirective)
+  NO_IMPL(OMPTaskLoopSimdDirective)
+  NO_IMPL(OMPTeamsDistributeDirective)
+  NO_IMPL(OMPTeamsDistributeParallelForDirective)
+  NO_IMPL(OMPTeamsDistributeParallelForSimdDirective)
+  NO_IMPL(OMPTeamsDistributeSimdDirective)
+  NO_IMPL(OMPMasterDirective)
+  NO_IMPL(OMPOrderedDirective)
+  NO_IMPL(OMPParallelDirective)
+  NO_IMPL(OMPParallelMasterDirective)
+  NO_IMPL(OMPParallelSectionsDirective)
+  NO_IMPL(OMPSectionDirective)
+  NO_IMPL(OMPSectionsDirective)
+  NO_IMPL(OMPSingleDirective)
+  NO_IMPL(OMPTargetDataDirective)
+  NO_IMPL(OMPTargetDirective)
+  NO_IMPL(OMPTargetEnterDataDirective)
+  NO_IMPL(OMPTargetExitDataDirective)
+  NO_IMPL(OMPTargetParallelDirective)
+  NO_IMPL(OMPTargetParallelForDirective)
+  NO_IMPL(OMPTargetTeamsDirective)
+  NO_IMPL(OMPTargetUpdateDirective)
+  NO_IMPL(OMPTaskDirective)
+  NO_IMPL(OMPTaskgroupDirective)
+  NO_IMPL(OMPTaskwaitDirective)
+  NO_IMPL(OMPTaskyieldDirective)
+  NO_IMPL(OMPTeamsDirective)
+  NO_IMPL(ObjCAtCatchStmt)
+  NO_IMPL(ObjCAtFinallyStmt)
+  NO_IMPL(ObjCAtSynchronizedStmt)
+  NO_IMPL(ObjCAtThrowStmt)
+  NO_IMPL(ObjCAtTryStmt)
+  NO_IMPL(ObjCAutoreleasePoolStmt)
+  NO_IMPL(ObjCForCollectionStmt)
+  NO_IMPL(ReturnStmt)
+  NO_IMPL(SEHExceptStmt)
+  NO_IMPL(SEHFinallyStmt)
+  NO_IMPL(SEHLeaveStmt)
+  NO_IMPL(SEHTryStmt)
+  NO_IMPL(SwitchCase)
+  NO_IMPL(CaseStmt)
+  NO_IMPL(DefaultStmt)
+  NO_IMPL(SwitchStmt)
+  NO_IMPL(ValueStmt)
 
   // Exprs
   DECLARE_VISITOR(Expr)
-  //NO_IMPL(CastExpr)
-  //NO_IMPL(ExplicitCastExpr)
-  DECLARE_VISITOR(DeclRefExpr)
-  //DECLARE_VISITOR(PredefinedExpr)
-  DECLARE_VISITOR(CharacterLiteral)
-  DECLARE_VISITOR(IntegerLiteral)
-  DECLARE_VISITOR(FixedPointLiteral)
-  DECLARE_VISITOR(FloatingLiteral)
-  DECLARE_VISITOR(StringLiteral)
-  DECLARE_VISITOR(MemberExpr)
-  DECLARE_VISITOR(OverloadExpr)
+  NO_IMPL(AbstractConditionalOperator)
+  NO_IMPL(BinaryConditionalOperator)
+  NO_IMPL(ConditionalOperator)
+  NO_IMPL(AddrLabelExpr)
+  NO_IMPL(ArrayInitIndexExpr)
+  NO_IMPL(ArrayInitLoopExpr)
+  NO_IMPL(ArraySubscriptExpr)
+  NO_IMPL(ArrayTypeTraitExpr)
+  NO_IMPL(AsTypeExpr)
+  NO_IMPL(AtomicExpr)
+  NO_IMPL(BinaryOperator)
+  NO_IMPL(CompoundAssignOperator)
+  NO_IMPL(BlockExpr)
+  NO_IMPL(CXXBindTemporaryExpr)
+  NO_IMPL(CXXBoolLiteralExpr)
+  NO_IMPL(CXXConstructExpr)
+  NO_IMPL(CXXTemporaryObjectExpr)
   DECLARE_VISITOR(CXXDefaultArgExpr)
   DECLARE_VISITOR(CXXDefaultInitExpr)
-
-  //NO_IMPL(UnaryOperator)
-  //NO_IMPL(UnaryExprOrTypeTraitExpr)
-
-  // C++
-  //DECLARE_VISITOR(LambdaExpr)
+  NO_IMPL(CXXDeleteExpr)
+  NO_IMPL(CXXDependentScopeMemberExpr)
+  NO_IMPL(CXXFoldExpr)
+  NO_IMPL(CXXInheritedCtorInitExpr)
+  NO_IMPL(CXXNewExpr)
+  NO_IMPL(CXXNoexceptExpr)
+  NO_IMPL(CXXNullPtrLiteralExpr)
+  NO_IMPL(CXXPseudoDestructorExpr)
+  NO_IMPL(CXXRewrittenBinaryOperator)
+  NO_IMPL(CXXScalarValueInitExpr)
+  NO_IMPL(CXXStdInitializerListExpr)
+  NO_IMPL(CXXThisExpr)
+  NO_IMPL(CXXThrowExpr)
+  NO_IMPL(CXXTypeidExpr)
+  NO_IMPL(CXXUnresolvedConstructExpr)
+  NO_IMPL(CXXUuidofExpr)
+  NO_IMPL(CallExpr)
+  NO_IMPL(CUDAKernelCallExpr)
+  NO_IMPL(CXXMemberCallExpr)
+  NO_IMPL(CXXOperatorCallExpr)
+  NO_IMPL(UserDefinedLiteral)
+  NO_IMPL(CastExpr)
+  NO_IMPL(ExplicitCastExpr)
+  NO_IMPL(BuiltinBitCastExpr)
+  NO_IMPL(CStyleCastExpr)
+  NO_IMPL(CXXFunctionalCastExpr)
+  NO_IMPL(CXXNamedCastExpr)
+  NO_IMPL(CXXConstCastExpr)
+  NO_IMPL(CXXDynamicCastExpr)
+  NO_IMPL(CXXReinterpretCastExpr)
+  NO_IMPL(CXXStaticCastExpr)
+  NO_IMPL(ObjCBridgedCastExpr)
+  NO_IMPL(ImplicitCastExpr)
+  DECLARE_VISITOR(CharacterLiteral)
+  NO_IMPL(ChooseExpr)
+  NO_IMPL(CompoundLiteralExpr)
+  NO_IMPL(ConceptSpecializationExpr)
+  NO_IMPL(ConvertVectorExpr)
+  NO_IMPL(CoroutineSuspendExpr)
+  NO_IMPL(CoawaitExpr)
+  NO_IMPL(CoyieldExpr)
+  DECLARE_VISITOR(DeclRefExpr)
+  NO_IMPL(DependentCoawaitExpr)
+  NO_IMPL(DependentScopeDeclRefExpr)
+  NO_IMPL(DesignatedInitExpr)
+  NO_IMPL(DesignatedInitUpdateExpr)
+  NO_IMPL(ExpressionTraitExpr)
+  NO_IMPL(ExtVectorElementExpr)
+  DECLARE_VISITOR(FixedPointLiteral)
+  DECLARE_VISITOR(FloatingLiteral)
+  NO_IMPL(FullExpr)
+  NO_IMPL(ConstantExpr)
+  NO_IMPL(ExprWithCleanups)
+  NO_IMPL(FunctionParmPackExpr)
+  NO_IMPL(GNUNullExpr)
+  NO_IMPL(GenericSelectionExpr)
+  NO_IMPL(ImaginaryLiteral)
+  NO_IMPL(ImplicitValueInitExpr)
+  NO_IMPL(InitListExpr)
+  DECLARE_VISITOR(IntegerLiteral)
+  NO_IMPL(LambdaExpr)
+  NO_IMPL(MSPropertyRefExpr)
+  NO_IMPL(MSPropertySubscriptExpr)
+  NO_IMPL(MaterializeTemporaryExpr)
+  DECLARE_VISITOR(MemberExpr)
+  NO_IMPL(NoInitExpr)
+  NO_IMPL(OMPArraySectionExpr)
+  NO_IMPL(ObjCArrayLiteral)
+  NO_IMPL(ObjCAvailabilityCheckExpr)
+  NO_IMPL(ObjCBoolLiteralExpr)
+  NO_IMPL(ObjCBoxedExpr)
+  NO_IMPL(ObjCDictionaryLiteral)
+  NO_IMPL(ObjCEncodeExpr)
+  NO_IMPL(ObjCIndirectCopyRestoreExpr)
+  NO_IMPL(ObjCIsaExpr)
+  NO_IMPL(ObjCIvarRefExpr)
+  NO_IMPL(ObjCMessageExpr)
+  NO_IMPL(ObjCPropertyRefExpr)
+  NO_IMPL(ObjCProtocolExpr)
+  NO_IMPL(ObjCSelectorExpr)
+  NO_IMPL(ObjCStringLiteral)
+  NO_IMPL(ObjCSubscriptRefExpr)
+  NO_IMPL(OffsetOfExpr)
+  NO_IMPL(OpaqueValueExpr)
+  DECLARE_VISITOR(OverloadExpr)
+  NO_IMPL(UnresolvedLookupExpr)
+  NO_IMPL(UnresolvedMemberExpr)
+  NO_IMPL(PackExpansionExpr)
+  NO_IMPL(ParenExpr)
+  NO_IMPL(ParenListExpr)
+  NO_IMPL(PredefinedExpr)
+  NO_IMPL(PseudoObjectExpr)
+  NO_IMPL(RequiresExpr)
+  NO_IMPL(ShuffleVectorExpr)
+  NO_IMPL(SizeOfPackExpr)
+  NO_IMPL(SourceLocExpr)
+  NO_IMPL(StmtExpr)
+  DECLARE_VISITOR(StringLiteral)
+  NO_IMPL(SubstNonTypeTemplateParmExpr)
+  NO_IMPL(SubstNonTypeTemplateParmPackExpr)
+  NO_IMPL(TypeTraitExpr)
+  NO_IMPL(TypoExpr)
+  NO_IMPL(UnaryExprOrTypeTraitExpr)
+  NO_IMPL(UnaryOperator)
+  NO_IMPL(VAArgExpr)
+  NO_IMPL(LabelStmt)
+  NO_IMPL(WhileStmt) 
 
   // Comments.
   const char *getCommandName(unsigned CommandID);
@@ -420,44 +657,364 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
 
   // Types - no template type handling yet
   int TypeWithChildInfoTupleSize();
+
   DECLARE_VISITOR(Type)
   DECLARE_VISITOR(AdjustedType)
+  NO_IMPL(DecayedType)
   DECLARE_VISITOR(ArrayType)
   DECLARE_VISITOR(ConstantArrayType)
-  //  DECLARE_VISITOR(DependentSizedArrayType)
-  //  DECLARE_VISITOR(IncompleteArrayType)
+  NO_IMPL(DependentSizedArrayType)
+  NO_IMPL(IncompleteArrayType)
   DECLARE_VISITOR(VariableArrayType)
   DECLARE_VISITOR(AtomicType)
-  DECLARE_VISITOR(AttributedType) // getEquivalentType() + getAttrKind -> string
-  //  DECLARE_VISITOR(AutoType)
+  DECLARE_VISITOR(AttributedType)
   DECLARE_VISITOR(BlockPointerType)
   DECLARE_VISITOR(BuiltinType)
-  //  DECLARE_VISITOR(ComplexType)
+  NO_IMPL(ComplexType)
   DECLARE_VISITOR(DecltypeType)
-  //  DECLARE_VISITOR(DependentSizedExtVectorType)
+  NO_IMPL(DeducedType)
+  NO_IMPL(AutoType)
+  NO_IMPL(DeducedTemplateSpecializationType)
+  NO_IMPL(DependentAddressSpaceType)
+  DECLARE_VISITOR(DependentNameType)
+  NO_IMPL(DependentSizedExtVectorType)
+  NO_IMPL(DependentTemplateSpecializationType)
+  NO_IMPL(DependentVectorType)
+  NO_IMPL(ElaboratedType)
   DECLARE_VISITOR(FunctionType)
-  //  DECLARE_VISITOR(FunctionNoProtoType)
+  NO_IMPL(FunctionNoProtoType)
   DECLARE_VISITOR(FunctionProtoType)
+  DECLARE_VISITOR(InjectedClassNameType)
+  NO_IMPL(MacroQualifiedType)
   DECLARE_VISITOR(MemberPointerType)
+  NO_IMPL(ObjCObjectPointerType)
+  NO_IMPL(ObjCObjectType)
+  NO_IMPL(ObjCInterfaceType)
+  NO_IMPL(ObjCTypeParamType)
+  NO_IMPL(PackExpansionType)
   DECLARE_VISITOR(ParenType)
+  NO_IMPL(PipeType)
   DECLARE_VISITOR(PointerType)
   DECLARE_VISITOR(ReferenceType)
-  DECLARE_VISITOR(TagType)
-  DECLARE_VISITOR(TypedefType)
-  DECLARE_VISITOR(TemplateTypeParmType)
+  NO_IMPL(LValueReferenceType)
+  NO_IMPL(RValueReferenceType)
   DECLARE_VISITOR(SubstTemplateTypeParmType)
+  DECLARE_VISITOR(TagType)
+  NO_IMPL(EnumType)
+  NO_IMPL(RecordType)
   DECLARE_VISITOR(TemplateSpecializationType)
-  DECLARE_VISITOR(InjectedClassNameType)
-  DECLARE_VISITOR(DependentNameType)
-
+  DECLARE_VISITOR(TemplateTypeParmType)
+  NO_IMPL(TypeOfExprType)
+  NO_IMPL(TypeOfType)
+  DECLARE_VISITOR(TypedefType)
+  NO_IMPL(UnaryTransformType)
+  NO_IMPL(UnresolvedUsingType)
+  NO_IMPL(VectorType)
+  NO_IMPL(ExtVectorType)
 
   void dumpAttrKind(attr::Kind Kind);
   void dumpAttr(const Attr *A);
+  
   DECLARE_VISITOR(Attr)
+  NO_IMPL(AddressSpaceAttr)
+  NO_IMPL(NoDerefAttr)
+  NO_IMPL(ObjCGCAttr)
+  NO_IMPL(ObjCInertUnsafeUnretainedAttr)
+  NO_IMPL(ObjCKindOfAttr)
+  NO_IMPL(OpenCLConstantAddressSpaceAttr)
+  NO_IMPL(OpenCLGenericAddressSpaceAttr)
+  NO_IMPL(OpenCLGlobalAddressSpaceAttr)
+  NO_IMPL(OpenCLLocalAddressSpaceAttr)
+  NO_IMPL(OpenCLPrivateAddressSpaceAttr)
+  NO_IMPL(Ptr32Attr)
+  NO_IMPL(Ptr64Attr)
+  NO_IMPL(SPtrAttr)
+  NO_IMPL(TypeNonNullAttr)
+  NO_IMPL(TypeNullUnspecifiedAttr)
+  NO_IMPL(TypeNullableAttr)
+  NO_IMPL(UPtrAttr)
+  NO_IMPL(FallThroughAttr)
+  NO_IMPL(SuppressAttr)
+  NO_IMPL(AArch64VectorPcsAttr)
+  NO_IMPL(AcquireHandleAttr)
+  NO_IMPL(AnyX86NoCfCheckAttr)
+  NO_IMPL(CDeclAttr)
+  NO_IMPL(FastCallAttr)
+  NO_IMPL(IntelOclBiccAttr)
+  NO_IMPL(LifetimeBoundAttr)
+  NO_IMPL(MSABIAttr)
+  NO_IMPL(NSReturnsRetainedAttr)
+  NO_IMPL(ObjCOwnershipAttr)
+  NO_IMPL(PascalAttr)
+  NO_IMPL(PcsAttr)
+  NO_IMPL(PreserveAllAttr)
+  NO_IMPL(RegCallAttr)
+  NO_IMPL(StdCallAttr)
+  NO_IMPL(SwiftCallAttr)
+  NO_IMPL(SysVABIAttr)
+  NO_IMPL(ThisCallAttr)
+  NO_IMPL(VectorCallAttr)
+  NO_IMPL(SwiftContextAttr)
+  NO_IMPL(SwiftErrorResultAttr)
+  NO_IMPL(SwiftIndirectResultAttr)
   DECLARE_VISITOR(AnnotateAttr)
+  NO_IMPL(CFConsumedAttr)
+  NO_IMPL(CarriesDependencyAttr)
+  NO_IMPL(NSConsumedAttr)
+  NO_IMPL(NonNullAttr)
+  NO_IMPL(OSConsumedAttr)
+  NO_IMPL(PassObjectSizeAttr)
+  NO_IMPL(ReleaseHandleAttr)
+  NO_IMPL(UseHandleAttr)
+  NO_IMPL(AMDGPUFlatWorkGroupSizeAttr)
+  NO_IMPL(AMDGPUNumSGPRAttr)
+  NO_IMPL(AMDGPUNumVGPRAttr)
+  NO_IMPL(AMDGPUWavesPerEUAttr)
+  NO_IMPL(ARMInterruptAttr)
+  NO_IMPL(AVRInterruptAttr)
+  NO_IMPL(AVRSignalAttr)
+  NO_IMPL(AcquireCapabilityAttr)
+  NO_IMPL(AcquiredAfterAttr)
+  NO_IMPL(AlignMac68kAttr)
+  NO_IMPL(AlignedAttr)
+  NO_IMPL(AllocAlignAttr)
+  NO_IMPL(AllocSizeAttr)
+  NO_IMPL(AlwaysDestroyAttr)
+  NO_IMPL(AlwaysInlineAttr)
+  NO_IMPL(AnalyzerNoReturnAttr)
+  NO_IMPL(AnyX86InterruptAttr)
+  NO_IMPL(AnyX86NoCallerSavedRegistersAttr)
+  NO_IMPL(ArcWeakrefUnavailableAttr)
+  NO_IMPL(ArgumentWithTypeTagAttr)
+  NO_IMPL(ArmMveAliasAttr)
+  NO_IMPL(ArtificialAttr)
+  NO_IMPL(AsmLabelAttr)
+  NO_IMPL(AssertCapabilityAttr)
+  NO_IMPL(AssertExclusiveLockAttr)
+  NO_IMPL(AssertSharedLockAttr)
+  NO_IMPL(AssumeAlignedAttr)
   DECLARE_VISITOR(AvailabilityAttr)
+  NO_IMPL(BPFPreserveAccessIndexAttr)
+  NO_IMPL(BlocksAttr)
+  NO_IMPL(C11NoReturnAttr)
+  NO_IMPL(CFAuditedTransferAttr)
+  NO_IMPL(CFGuardAttr)
+  NO_IMPL(CFICanonicalJumpTableAttr)
+  NO_IMPL(CFReturnsNotRetainedAttr)
+  NO_IMPL(CFReturnsRetainedAttr)
+  NO_IMPL(CFUnknownTransferAttr)
+  NO_IMPL(CPUDispatchAttr)
+  NO_IMPL(CPUSpecificAttr)
+  NO_IMPL(CUDAConstantAttr)
+  NO_IMPL(CUDADeviceAttr)
+  NO_IMPL(CUDAGlobalAttr)
+  NO_IMPL(CUDAHostAttr)
+  NO_IMPL(CUDAInvalidTargetAttr)
+  NO_IMPL(CUDALaunchBoundsAttr)
+  NO_IMPL(CUDASharedAttr)
+  NO_IMPL(CXX11NoReturnAttr)
+  NO_IMPL(CallableWhenAttr)
+  NO_IMPL(CallbackAttr)
+  NO_IMPL(CapabilityAttr)
+  NO_IMPL(CapturedRecordAttr)
+  NO_IMPL(CleanupAttr)
+  NO_IMPL(CodeSegAttr)
+  NO_IMPL(ColdAttr)
+  NO_IMPL(CommonAttr)
+  NO_IMPL(ConstAttr)
+  NO_IMPL(ConstInitAttr)
+  NO_IMPL(ConstructorAttr)
+  NO_IMPL(ConsumableAttr)
+  NO_IMPL(ConsumableAutoCastAttr)
+  NO_IMPL(ConsumableSetOnReadAttr)
+  NO_IMPL(ConvergentAttr)
+  NO_IMPL(DLLExportAttr)
+  NO_IMPL(DLLExportStaticLocalAttr)
+  NO_IMPL(DLLImportAttr)
+  NO_IMPL(DLLImportStaticLocalAttr)
+  NO_IMPL(DeprecatedAttr)
+  NO_IMPL(DestructorAttr)
+  NO_IMPL(DiagnoseIfAttr)
+  NO_IMPL(DisableTailCallsAttr)
+  NO_IMPL(EmptyBasesAttr)
+  NO_IMPL(EnableIfAttr)
+  NO_IMPL(EnumExtensibilityAttr)
+  NO_IMPL(ExcludeFromExplicitInstantiationAttr)
+  NO_IMPL(ExclusiveTrylockFunctionAttr)
+  NO_IMPL(ExternalSourceSymbolAttr)
+  NO_IMPL(FinalAttr)
+  NO_IMPL(FlagEnumAttr)
+  NO_IMPL(FlattenAttr)
+  NO_IMPL(FormatAttr)
+  NO_IMPL(FormatArgAttr)
+  NO_IMPL(GNUInlineAttr)
+  NO_IMPL(GuardedByAttr)
+  NO_IMPL(GuardedVarAttr)
+  NO_IMPL(HIPPinnedShadowAttr)
+  NO_IMPL(HotAttr)
+  NO_IMPL(IBActionAttr)
+  NO_IMPL(IBOutletAttr)
+  NO_IMPL(IBOutletCollectionAttr)
+  NO_IMPL(InitPriorityAttr)
+  NO_IMPL(InternalLinkageAttr)
+  NO_IMPL(LTOVisibilityPublicAttr)
+  NO_IMPL(LayoutVersionAttr)
+  NO_IMPL(LockReturnedAttr)
+  NO_IMPL(LocksExcludedAttr)
+  NO_IMPL(MIGServerRoutineAttr)
+  NO_IMPL(MSAllocatorAttr)
+  NO_IMPL(MSInheritanceAttr)
+  NO_IMPL(MSNoVTableAttr)
+  NO_IMPL(MSP430InterruptAttr)
+  NO_IMPL(MSStructAttr)
+  NO_IMPL(MSVtorDispAttr)
+  NO_IMPL(MaxFieldAlignmentAttr)
+  NO_IMPL(MayAliasAttr)
+  NO_IMPL(MicroMipsAttr)
+  NO_IMPL(MinSizeAttr)
+  NO_IMPL(MinVectorWidthAttr)
+  NO_IMPL(Mips16Attr)
+  NO_IMPL(MipsInterruptAttr)
+  NO_IMPL(MipsLongCallAttr)
+  NO_IMPL(MipsShortCallAttr)
+  NO_IMPL(NSConsumesSelfAttr)
+  NO_IMPL(NSReturnsAutoreleasedAttr)
+  NO_IMPL(NSReturnsNotRetainedAttr)
+  NO_IMPL(NakedAttr)
+  NO_IMPL(NoAliasAttr)
+  NO_IMPL(NoCommonAttr)
+  NO_IMPL(NoDebugAttr)
+  NO_IMPL(NoDestroyAttr)
+  NO_IMPL(NoDuplicateAttr)
+  NO_IMPL(NoInlineAttr)
+  NO_IMPL(NoInstrumentFunctionAttr)
+  NO_IMPL(NoMicroMipsAttr)
+  NO_IMPL(NoMips16Attr)
+  NO_IMPL(NoReturnAttr)
+  NO_IMPL(NoSanitizeAttr)
+  NO_IMPL(NoSpeculativeLoadHardeningAttr)
+  NO_IMPL(NoSplitStackAttr)
+  NO_IMPL(NoStackProtectorAttr)
+  NO_IMPL(NoThreadSafetyAnalysisAttr)
+  NO_IMPL(NoThrowAttr)
+  NO_IMPL(NoUniqueAddressAttr)
+  NO_IMPL(NotTailCalledAttr)
+  NO_IMPL(OMPAllocateDeclAttr)
+  NO_IMPL(OMPCaptureNoInitAttr)
+  NO_IMPL(OMPDeclareTargetDeclAttr)
+  NO_IMPL(OMPDeclareVariantAttr)
+  NO_IMPL(OMPThreadPrivateDeclAttr)
+  NO_IMPL(OSConsumesThisAttr)
+  NO_IMPL(OSReturnsNotRetainedAttr)
+  NO_IMPL(OSReturnsRetainedAttr)
+  NO_IMPL(OSReturnsRetainedOnNonZeroAttr)
+  NO_IMPL(OSReturnsRetainedOnZeroAttr)
+  NO_IMPL(ObjCBridgeAttr)
+  NO_IMPL(ObjCBridgeMutableAttr)
+  NO_IMPL(ObjCBridgeRelatedAttr)
+  NO_IMPL(ObjCExceptionAttr)
+  NO_IMPL(ObjCExplicitProtocolImplAttr)
+  NO_IMPL(ObjCExternallyRetainedAttr)
+  NO_IMPL(ObjCIndependentClassAttr)
+  NO_IMPL(ObjCMethodFamilyAttr)
+  NO_IMPL(ObjCNSObjectAttr)
+  NO_IMPL(ObjCPreciseLifetimeAttr)
+  NO_IMPL(ObjCRequiresPropertyDefsAttr)
+  NO_IMPL(ObjCRequiresSuperAttr)
+  NO_IMPL(ObjCReturnsInnerPointerAttr)
+  NO_IMPL(ObjCRootClassAttr)
+  NO_IMPL(ObjCSubclassingRestrictedAttr)
+  NO_IMPL(OpenCLIntelReqdSubGroupSizeAttr)
+  NO_IMPL(OpenCLKernelAttr)
+  NO_IMPL(OpenCLUnrollHintAttr)
+  NO_IMPL(OptimizeNoneAttr)
+  NO_IMPL(OverrideAttr)
+  NO_IMPL(OwnerAttr)
+  NO_IMPL(OwnershipAttr)
+  NO_IMPL(PackedAttr)
+  NO_IMPL(ParamTypestateAttr)
+  NO_IMPL(PatchableFunctionEntryAttr)
+  NO_IMPL(PointerAttr)
+  NO_IMPL(PragmaClangBSSSectionAttr)
+  NO_IMPL(PragmaClangDataSectionAttr)
+  NO_IMPL(PragmaClangRelroSectionAttr)
+  NO_IMPL(PragmaClangRodataSectionAttr)
+  NO_IMPL(PragmaClangTextSectionAttr)
+  NO_IMPL(PtGuardedByAttr)
+  NO_IMPL(PtGuardedVarAttr)
+  NO_IMPL(PureAttr)
+  NO_IMPL(RISCVInterruptAttr)
+  NO_IMPL(ReinitializesAttr)
+  NO_IMPL(ReqdWorkGroupSizeAttr)
+  NO_IMPL(ReleaseCapabilityAttr)
+  NO_IMPL(RestrictAttr)
+  NO_IMPL(ReturnTypestateAttr)
+  NO_IMPL(ReturnsNonNullAttr)
+  NO_IMPL(ReturnsTwiceAttr)
+  NO_IMPL(SYCLKernelAttr)
+  NO_IMPL(ScopedLockableAttr)
+  NO_IMPL(SectionAttr)
+  NO_IMPL(SelectAnyAttr)
   DECLARE_VISITOR(SentinelAttr)
+  NO_IMPL(SetTypestateAttr)
+  NO_IMPL(SharedTrylockFunctionAttr)
+  NO_IMPL(SpeculativeLoadHardeningAttr)
+  NO_IMPL(TLSModelAttr)
+  NO_IMPL(TargetAttr)
+  NO_IMPL(TestTypestateAttr)
+  NO_IMPL(TransparentUnionAttr)
+  NO_IMPL(TypeTagForDatatypeAttr)
+  NO_IMPL(TrivialABIAttr)
+  NO_IMPL(TryAcquireCapabilityAttr)
+  NO_IMPL(TypeVisibilityAttr)
+  NO_IMPL(UnavailableAttr)
+  NO_IMPL(UninitializedAttr)
+  NO_IMPL(UnusedAttr)
+  NO_IMPL(UsedAttr)
+  NO_IMPL(UuidAttr)
+  NO_IMPL(VecReturnAttr)
   DECLARE_VISITOR(VisibilityAttr)
+  NO_IMPL(WarnUnusedAttr)
+  NO_IMPL(WarnUnusedResultAttr)
+  NO_IMPL(WeakAttr)
+  NO_IMPL(WeakImportAttr)
+  NO_IMPL(WeakRefAttr)
+  NO_IMPL(WebAssemblyExportNameAttr)
+  NO_IMPL(WebAssemblyImportModuleAttr)
+  NO_IMPL(WebAssemblyImportNameAttr)
+  NO_IMPL(WorkGroupSizeHintAttr)
+  NO_IMPL(X86ForceAlignArgPointerAttr)
+  NO_IMPL(XRayInstrumentAttr)
+  NO_IMPL(XRayLogArgsAttr)
+  NO_IMPL(AbiTagAttr)
+  NO_IMPL(AliasAttr)
+  NO_IMPL(AlignValueAttr)
+  NO_IMPL(IFuncAttr)
+  NO_IMPL(InitSegAttr)
+  NO_IMPL(LoopHintAttr)
+  NO_IMPL(ModeAttr)
+  NO_IMPL(NoBuiltinAttr)
+  NO_IMPL(NoEscapeAttr)
+  NO_IMPL(OMPCaptureKindAttr)
+  NO_IMPL(OMPDeclareSimdDeclAttr)
+  NO_IMPL(OMPReferencedVarAttr)
+  NO_IMPL(ObjCBoxableAttr)
+  NO_IMPL(ObjCClassStubAttr)
+  NO_IMPL(ObjCDesignatedInitializerAttr)
+  NO_IMPL(ObjCDirectAttr)
+  NO_IMPL(ObjCDirectMembersAttr)
+  NO_IMPL(ObjCNonLazyClassAttr)
+  NO_IMPL(ObjCRuntimeNameAttr)
+  NO_IMPL(ObjCRuntimeVisibleAttr)
+  NO_IMPL(OpenCLAccessAttr)
+  NO_IMPL(OverloadableAttr)
+  NO_IMPL(RenderScriptKernelAttr)
+  NO_IMPL(ThreadAttr)
+  NO_IMPL(TypeAttr)
+  NO_IMPL(StmtAttr)
+  NO_IMPL(InheritableAttr)
+  NO_IMPL(InheritableParamAttr)
+  NO_IMPL(ParameterABIAttr)
 
   void dumpTypeAttr(AttributedType::Kind kind);
 
@@ -485,9 +1042,6 @@ int pointerCounter = 1;
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::writePointer(bool withPointers, const void *Ptr) {
-  ObjectScope oScope(OF, 1);
-
-  OF.emitTag("pointer");
   if (!Ptr) {
     OF.emitInteger(0);
     return;
@@ -496,9 +1050,7 @@ void ASTExporter<ATDWriter>::writePointer(bool withPointers, const void *Ptr) {
     pointerMap[Ptr] = pointerCounter++;
   }
   OF.emitInteger(pointerMap[Ptr]);
-
   return;
-
 }
 
 template <class ATDWriter>
@@ -516,7 +1068,6 @@ void ASTExporter<ATDWriter>::dumpSourceFile(SourceLocation Loc) {
 
   PresumedLoc PLoc = SM.getPresumedLoc(SpellingLoc);
 
-  OF.emitTag("file");
   if (PLoc.isInvalid()) {
     OF.emitString("Unknown");
   } else {
@@ -538,7 +1089,8 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
   // that haven't changed since the last loc printed.
   PresumedLoc PLoc = SM.getPresumedLoc(SpellingLoc);
 
-  ObjectScope Scope(OF, 2);
+  ObjectScope oScope(OF, 2);
+
   if (PLoc.isInvalid()) {
     
     OF.emitTag("line");
@@ -580,9 +1132,10 @@ void ASTExporter<ATDWriter>::dumpSourceRange(SourceRange R) {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpQualType(const QualType &qt) {
-  
+ 
+  bool isNull = qt.isNull();	
   clang::Qualifiers Quals =
-      qt.isNull() ? clang::Qualifiers() : qt.getQualifiers();
+       isNull ? clang::Qualifiers() : qt.getQualifiers();
   bool isConst = Quals.hasConst();
   bool isRestrict = Quals.hasRestrict();
   bool isVolatile = Quals.hasVolatile();
@@ -593,9 +1146,20 @@ void ASTExporter<ATDWriter>::dumpQualType(const QualType &qt) {
   OF.emitTag("type_ptr");
   dumpQualTypeNoQuals(qt);
 
-  OF.emitTag("type_name");
   PrintingPolicy pp(Context.getLangOpts());
+  
+  OF.emitTag("type");
   OF.emitString(qt.getAsString(pp));
+
+  OF.emitTag("canonical");
+  if (!isNull) {
+    QualType canonical = qt.getCanonicalType();
+    OF.emitString(canonical.getAsString(pp));
+  } else {
+    OF.emitString("None");
+  }
+
+  //OF.emitString(canonical.getAsString(pp));
 
   OF.emitTag("is_const");
   OF.emitBoolean(isConst);
@@ -646,11 +1210,11 @@ void ASTExporter<ATDWriter>::dumpDeclRef(const Decl &D) {
   OF.emitTag("decl_pointer");
   dumpPointer(&D);
 
-  OF.emitTag("name");
+  OF.emitTag("id");
   if (ND) {
     dumpName(*ND);
   } else {
-    ObjectScope oScope(OF, 0);
+    OF.emitString("None");
   }
    
   OF.emitTag("is_hidden");
@@ -850,7 +1414,7 @@ void ASTExporter<ATDWriter>::dumpCXXCtorInitializer(
 
   }
 
-  OF.emitTag("source_range");
+  OF.emitTag("location");
   dumpSourceRange(Init.getSourceRange());
 
   OF.emitTag("init_expr");
@@ -1003,15 +1567,22 @@ bool ASTExporter<ATDWriter>::alwaysEmitParent(const Decl *D) {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpDecl(const Decl *D) {
+
+  ObjectScope oScope(OF, 3);
+
+  OF.emitTag("clang_kind");
+  OF.emitString("Decl");
+
   OF.emitTag("kind");
-  OF.emitString(std::string(D->getDeclKindName()) + "Decl");
+  OF.emitString(D->getDeclKindName() + std::string("Decl"));
+
+  OF.emitTag("content");
   if (!D) {
     // We use a fixed EmptyDecl node to represent null pointers
     D = NullPtrDecl;
   }
   {
-    OF.emitTag("decl_content");
-    ArrayScope aScope(OF, ASTExporter::tupleSizeOfDeclKind(D->getKind()));
+    TupleScope tScope(OF, ASTExporter::tupleSizeOfDeclKind(D->getKind()));
     ConstDeclVisitor<ASTExporter<ATDWriter>>::Visit(D);
   }
   return;
@@ -1049,8 +1620,9 @@ void ASTExporter<ATDWriter>::VisitDecl(const Decl *D) {
     AccessSpecifier Access = D->getAccess();
     bool HasAccess = Access != AccessSpecifier::AS_none;
 
-    ObjectScope Scope(OF, 10);
+    ObjectScope Scope(OF, 11);
 
+    
     OF.emitTag("pointer");
     dumpPointer(D);
 
@@ -1058,17 +1630,17 @@ void ASTExporter<ATDWriter>::VisitDecl(const Decl *D) {
     if (ShouldEmitParentPointer) {
       dumpPointer(cast<Decl>(D->getDeclContext()));
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
-    OF.emitTag("source_range");
+    OF.emitTag("location");
     dumpSourceRange(D->getSourceRange());
 
     OF.emitTag("owning_module");
     if (M) {
       OF.emitString(M->getFullModuleName());
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
     OF.emitTag("is_hidden");
@@ -1100,14 +1672,14 @@ void ASTExporter<ATDWriter>::VisitDecl(const Decl *D) {
     if (Comment) {
       dumpFullComment(Comment);
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
     OF.emitTag("access_specifier");
     if (HasAccess) {
       dumpAccessSpecifier(Access);
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
   }
@@ -1123,8 +1695,16 @@ int ASTExporter<ATDWriter>::CapturedDeclTupleSize() {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitCapturedDecl(const CapturedDecl *D) {
+  ObjectScope oScope(OF, 2);
+
+  OF.emitTag("decl");
   VisitDecl(D);
+
+  OF.emitTag("context");
   VisitDeclContext(D);
+
+  return;
+
 }
 
 template <class ATDWriter>
@@ -1134,8 +1714,16 @@ int ASTExporter<ATDWriter>::LinkageSpecDeclTupleSize() {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitLinkageSpecDecl(const LinkageSpecDecl *D) {
+  ObjectScope oScope(OF, 2);
+
+  OF.emitTag("decl");
   VisitDecl(D);
+
+  OF.emitTag("context");
   VisitDeclContext(D);
+
+  return;
+
 }
 
 template <class ATDWriter>
@@ -1145,12 +1733,16 @@ int ASTExporter<ATDWriter>::NamespaceDeclTupleSize() {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitNamespaceDecl(const NamespaceDecl *D) {
+
+  ObjectScope oScope(OF, 4);
+
   VisitNamedDecl(D);
+
+  OF.emitTag("context");
   VisitDeclContext(D);
 
   bool IsInline = D->isInline();
   bool IsOriginalNamespace = D->isOriginalNamespace();
-  ObjectScope Scope(OF, 2);
 
   OF.emitTag("is_inline");
   OF.emitBoolean(IsInline);
@@ -1159,7 +1751,7 @@ void ASTExporter<ATDWriter>::VisitNamespaceDecl(const NamespaceDecl *D) {
   if (!IsOriginalNamespace) {
     dumpDeclRef(*D->getOriginalNamespace());
   } else {
-    ObjectScope oScope(OF, 0);
+    OF.emitString("None");
   }
 
   return;
@@ -1173,12 +1765,15 @@ int ASTExporter<ATDWriter>::TagDeclTupleSize() {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitTagDecl(const TagDecl *D) {
+  ObjectScope oScope(OF, 3);
+
+  OF.emitTag("decl");
   VisitTypeDecl(D);
+
+  OF.emitTag("context");
   VisitDeclContext(D);
 
-  ObjectScope(OF, 1);
-
-  OF.emitTag("kind");
+  OF.emitTag("tag_kind");
   switch (D->getTagKind()) {
   case TagTypeKind::TTK_Struct:
     OF.emitString("TTK_Struct");
@@ -1210,7 +1805,6 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitTypeDecl(const TypeDecl *D) {
   ObjectScope oScope(OF, 2);
 
-  OF.emitTag("named_decl");
   VisitNamedDecl(D);
   const Type *T = D->getTypeForDecl();
 
@@ -1230,7 +1824,6 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitValueDecl(const ValueDecl *D) {
   ObjectScope oScope(OF, 2);
 
-  OF.emitTag("named_decl");
   VisitNamedDecl(D);
 
   OF.emitTag("qualified_type");
@@ -1253,7 +1846,7 @@ void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
 
   ObjectScope oScope(OF, 1);
 
-  OF.emitTag("kind");
+  OF.emitTag("language_kind");
 
   switch (kind.getLanguage()) {
   case Language::Unknown:
@@ -1315,9 +1908,14 @@ void ASTExporter<ATDWriter>::dumpIntegerTypeWidths(const TargetInfo &info) {
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitTranslationUnitDecl(
     const TranslationUnitDecl *D) {
+
+  ObjectScope oScope(OF, 6);
+
+  OF.emitTag("decl");
   VisitDecl(D);
+
+  OF.emitTag("context");
   VisitDeclContext(D);
-  ObjectScope Scope(OF, 4);
 
   OF.emitTag("input_path");
   OF.emitString(
@@ -1349,7 +1947,11 @@ int ASTExporter<ATDWriter>::NamedDeclTupleSize() {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitNamedDecl(const NamedDecl *D) {
+
+  OF.emitTag("decl");
   VisitDecl(D);
+
+  OF.emitTag("id");
   dumpName(*D);
 
   return;
@@ -1366,7 +1968,6 @@ void ASTExporter<ATDWriter>::VisitTypedefDecl(const TypedefDecl *D) {
   ASTExporter<ATDWriter>::VisitTypedefNameDecl(D);
 
   bool IsModulePrivate = D->isModulePrivate();
-  ObjectScope Scope(OF, 2);
 
   OF.emitTag("underlying_type");
   dumpQualType(D->getUnderlyingType());
@@ -1508,20 +2109,11 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   }
   auto IsNoReturn = D->isNoReturn();
   bool HasParameters = !D->param_empty();
-  const FunctionDecl *DeclWithBody = D;
-  // FunctionDecl::hasBody() will set DeclWithBody pointer to decl that
-  // has body. If there is no body in all decls of that function,
-  // then we need to set DeclWithBody to nullptr manually
-  if (!D->hasBody(DeclWithBody)) {
-    DeclWithBody = nullptr;
-  }
-  bool HasDeclarationBody = D->doesThisDeclarationHaveABody();
   FunctionTemplateDecl *TemplateDecl = D->getPrimaryTemplate();
-  ObjectScope Scope(OF, 13);
+  ObjectScope Scope(OF, 11);
 
   OF.emitTag("mangled_name");
   if (ShouldMangleName) {
-    OF.emitTag("mangled_name");
     SmallString<64> Buf;
     llvm::raw_svector_ostream StrOS(Buf);
     if (const auto *CD = dyn_cast<CXXConstructorDecl>(D)) {
@@ -1552,7 +2144,7 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   OF.emitTag("is_deleted_as_written");
   OF.emitBoolean(IsDeletedAsWritten);
 
-  OF.emitTag("is_no+_return");
+  OF.emitTag("is_no_return");
   OF.emitBoolean(IsNoReturn);
 
   OF.emitTag("is_variadic");
@@ -1574,29 +2166,12 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
     ArrayScope aScope(OF, 0);
   }
 
-  OF.emitTag("decl_ptr_with_body");
-  if (DeclWithBody) {
-    dumpPointer(DeclWithBody);
-  } else {
-    ObjectScope oScope(OF, 0);
-  }
-
-  OF.emitTag("body");
-  if (HasDeclarationBody) {
-    const Stmt *Body = D->getBody();
-    if (Body) {
-      dumpStmt(Body);
-    }
-  } else {
-    ObjectScope oScope(OF, 0);
-  }
-
   OF.emitTag("template_specialization");
   if (TemplateDecl) {
     dumpTemplateSpecialization(TemplateDecl,
                                *D->getTemplateSpecializationArgs());
   } else {
-    ObjectScope oScope(OF, 0);
+    OF.emitString("None");
   }
 
   return;
@@ -1635,7 +2210,7 @@ void ASTExporter<ATDWriter>::VisitFieldDecl(const FieldDecl *D) {
   if (Init) {
     dumpStmt(Init);
   } else {
-    ObjectScope(OF, 0);
+    OF.emitString("None");
   }
 
   return;
@@ -2747,16 +3322,21 @@ TemplateDecl *T, const TemplateTemplateParmDecl *D) {
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpStmt(const Stmt *S) {
 
-  ObjectScope oScope(OF, 2);
+  ObjectScope oScope(OF, 3);
   if (!S) {
     // We use a fixed NullStmt node to represent null pointers
     S = NullPtrStmt;
   }
 
+  OF.emitTag("clang_kind");
+  OF.emitString("Stmt");
+
   OF.emitTag("kind");
   OF.emitString(std::string(S->getStmtClassName()));
+
+  OF.emitTag("content");
   {
-    ArrayScope aScope(OF, ASTExporter::tupleSizeOfStmtClass(S->getStmtClass()));
+    TupleScope aScope(OF, ASTExporter::tupleSizeOfStmtClass(S->getStmtClass()));
     ConstStmtVisitor<ASTExporter<ATDWriter>>::Visit(S);
   }
 
@@ -2771,16 +3351,18 @@ int ASTExporter<ATDWriter>::StmtTupleSize() {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitStmt(const Stmt *S) {
-  {
-    ObjectScope Scope(OF, 2);
+
+    OF.emitTag("stmt");
+    ObjectScope Scope(OF, 3);
 
     OF.emitTag("pointer");
     dumpPointer(S);
-    OF.emitTag("source_range");
+    OF.emitTag("location");
     dumpSourceRange(S->getSourceRange());
-  }
+
+    OF.emitTag("content");
   {
-    ArrayScope Scope(OF, std::distance(S->child_begin(), S->child_end()));
+    TupleScope Scope(OF, std::distance(S->child_begin(), S->child_end()));
     for (const Stmt *CI : S->children()) {
       dumpStmt(CI);
     }
@@ -2826,6 +3408,8 @@ void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
   bool HasNonDefaultValueKind = VK != VK_RValue;
   ExprObjectKind OK = Node->getObjectKind();
   bool HasNonDefaultObjectKind = OK != OK_Ordinary;
+
+  OF.emitTag("expr");
   ObjectScope Scope(OF, 3);
 
   OF.emitTag("qual_type");
@@ -3104,7 +3688,7 @@ void ASTExporter<ATDWriter>::VisitMemberExpr(const MemberExpr *Node) {
   OF.emitTag("performs_virtual_dispatch");
   OF.emitBoolean(PerformsVirtualDispatch);
 
-  OF.emitTag("name");
+  OF.emitTag("id");
   ValueDecl *memberDecl = Node->getMemberDecl();
   dumpName(*memberDecl);
 
@@ -3260,7 +3844,7 @@ void ASTExporter<ATDWriter>::visitComment(const Comment *C) {
     ObjectScope ObjComment(OF, 3); // not covered by tests
     OF.emitTag("parent_pointer");
     dumpPointer(C);
-    OF.emitTag("source_range");
+    OF.emitTag("location");
     dumpSourceRange(C->getSourceRange());
     OF.emitTag("comments");
   {
@@ -3286,14 +3870,15 @@ void ASTExporter<ATDWriter>::dumpType(const Type *T) {
   OF.emitTag("kind");
   OF.emitString(typeClassName + "Type");
 
+  OF.emitTag("content");
   {
     if (T) {
       // TypeVisitor assumes T is non-null
-      ArrayScope Scope(OF,
+      TupleScope Scope(OF,
                        ASTExporter::tupleSizeOfTypeClass(T->getTypeClass()));
       TypeVisitor<ASTExporter<ATDWriter>>::Visit(T);
     } else {
-      ArrayScope Scope(OF, 1);
+      TupleScope Scope(OF, 1);
       VisitType(nullptr);
     }
   }
@@ -3332,7 +3917,7 @@ void ASTExporter<ATDWriter>::VisitType(const Type *T) {
   if (HasDesugaredType) {
     dumpPointerToType(T->getUnqualifiedDesugaredType());
   } else {
-    ObjectScope oScope(OF, 0);
+    OF.emitString("None");
   }
 
   return;
@@ -3698,7 +4283,7 @@ void ASTExporter<ATDWriter>::VisitTemplateTypeParmType(const TemplateTypeParmTyp
     if (isSugared) {
         dumpQualType(T->desugar());
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
     return;
@@ -3727,7 +4312,7 @@ void ASTExporter<ATDWriter>::VisitSubstTemplateTypeParmType(const SubstTemplateT
     if (isSugared) {
         dumpQualType(T->desugar());
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
     return;
@@ -3767,7 +4352,7 @@ void ASTExporter<ATDWriter>::VisitTemplateSpecializationType(const TemplateSpeci
     if (isSugared) {
         dumpQualType(T->desugar());
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
     TemplateArgument const *args = T->getArgs();
@@ -3805,7 +4390,7 @@ void ASTExporter<ATDWriter>::VisitInjectedClassNameType(const InjectedClassNameT
     if (isSugared) {
         dumpQualType(T->desugar());
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
     return;
@@ -3831,7 +4416,7 @@ void ASTExporter<ATDWriter>::VisitDependentNameType(const DependentNameType *T) 
     if (isSugared) {
         dumpQualType(T->desugar());
     } else {
-      ObjectScope oScope(OF, 0);
+      OF.emitString("None");
     }
 
     return;
@@ -3874,7 +4459,7 @@ void ASTExporter<ATDWriter>::VisitAttr(const Attr *A) {
   ObjectScope Scope(OF, 3);
   OF.emitTag("pointer");
   dumpPointer(A);
-  OF.emitTag("source_range");
+  OF.emitTag("location");
   dumpSourceRange(A->getRange());
   OF.emitTag("attr");
   OF.emitString(std::string(A->getSpelling()));

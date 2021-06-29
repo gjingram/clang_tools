@@ -76,6 +76,7 @@ void NamePrinter<JSONWriter>::printTemplateArgList(
 
 template <class JSONWriter>
 void NamePrinter<JSONWriter>::printDeclName(const NamedDecl &D) {
+
   const DeclContext *Ctx = D.getDeclContext();
   SmallVector<const NamedDecl *, 8> Contexts;
   Contexts.push_back(&D);
@@ -106,6 +107,9 @@ void NamePrinter<JSONWriter>::printDeclName(const NamedDecl &D) {
   for (const Decl *Ctx : Contexts) {
     ConstDeclVisitor<NamePrinter<JSONWriter>>::Visit(Ctx);
   }
+
+  return;
+
 }
 
 template <class JSONWriter>

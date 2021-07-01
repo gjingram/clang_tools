@@ -72,7 +72,7 @@ struct ASTExporterOptions : ASTPluginLib::PluginASTOptionsBase {
   bool dumpComments = true;
   bool useMacroExpansionLocation = true;
   JSONWriter::JSONWriterOptions jsonWriterOptions = {
-      .prettifyJson = true
+      .prettifyJson = false
   };
 
   void loadValuesFromEnvAndMap(

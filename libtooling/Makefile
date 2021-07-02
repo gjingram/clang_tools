@@ -24,18 +24,17 @@ EXTS+=.json
 	@mkdir -p $$(dirname $@)
 	$(CXX) -c $(CFLAGS) $(CXXFLAGS) -o $@ $<
 
-#all: FacebookClangPlugin.dylib ast_exporter_bin
-all: FacebookClangPlugin.dylib ast_exporter_bin
+all: clang_tool.dylib ast_exporter_bin
 
-CLANG_FRONTEND=$(CLANG) -fsyntax-only -Xpreprocessor -detailed-preprocessing-record -Xclang -load -Xclang $(shell pwd)/FacebookClangPlugin.dylib
+CLANG_FRONTEND=$(CLANG) -fsyntax-only -Xpreprocessor -detailed-preprocessing-record -Xclang -load -Xclang $(shell pwd)/clang_tool.dylib
 
-FacebookClangPlugin.dylib: $(OBJS) $(HEADERS)
-	$(CXX) $(LDFLAGS_DYLIB) -o $@ $(OBJS) -lz -lpthread -lm
+clang_tool.dylib: $(OBJS) $(HEADERS)
+	$(CXX) -stdlib=libstdc++ $(LDFLAGS_DYLIB) -o $@ $(OBJS) -lz -lpthread -lm -lstdc++
 
 # Experimental tool. This requires clang static libraries.
 AST_EXPORTER_OBJS=ast_exporter_bin.o SimplePluginASTAction.o FileUtils.o AttrParameterVectorStream.o
 ast_exporter_bin: $(AST_EXPORTER_OBJS) $(HEADERS)
-	$(CXX) -o $@ $(AST_EXPORTER_OBJS) $(LDFLAGS) $(LLVM_CXXFLAGS) $(CLANG_TOOL_LIBS) $(LLVM_LDFLAGS) -lz -lpthread -lm
+	$(CXX) -stdlib=libstdc++ -o $@ $(AST_EXPORTER_OBJS) $(LDFLAGS) $(LLVM_CXXFLAGS) $(CLANG_TOOL_LIBS) $(LLVM_LDFLAGS) -lz -lpthread -lm -lstdc++
 
 
 TEST_DIRS=tests
@@ -48,7 +47,7 @@ EXPFILES_FORMULA=tests/$$P/*.exp
 SRCFILE_FORMULA=tests/$$(basename $$TEST)
 FILTERFILE_FORMULA=tests/$${P}/filter.sh
 
-test: FacebookClangPlugin.dylib
+test: clang_tool.dylib
 	@for P in $(PLUGINS); do                                                        \
 	   echo "-- $$P --";                                                            \
 	   export CLANG_FRONTEND_PLUGIN__AST_WITH_POINTERS=0;                           \
@@ -98,18 +97,18 @@ all_ast_samples: $(AST_SAMPLE_FILES:%=build/ast_samples/%.json.gz) $(AST_SAMPLE_
 
 J_DUMPER_ARGS=-Xclang -plugin -Xclang JsonASTExporter -Xclang -plugin-arg-JsonASTExporter -Xclang
 
-build/ast_samples/%.cpp.json: %.cpp FacebookClangPlugin.dylib
+build/ast_samples/%.cpp.json: %.cpp clang_tool.dylib
 	@mkdir -p build/ast_samples
 	$(CLANG_FRONTEND) $(CFLAGS) -Wno-ignored-qualifiers -I. $(J_DUMPER_ARGS) $@ -c $<
 
-build/ast_samples/%.cpp.json: tests/%.cpp FacebookClangPlugin.dylib
+build/ast_samples/%.cpp.json: tests/%.cpp clang_tool.dylib
 	@mkdir -p build/ast_samples
 	$(CLANG_FRONTEND) --std=c++14 $(J_DUMPER_ARGS) $@ -c $<
 
-build/ast_samples/%.c.json: tests/%.c FacebookClangPlugin.dylib
+build/ast_samples/%.c.json: tests/%.c clang_tool.dylib
 	@mkdir -p build/ast_samples
 	$(CLANG_FRONTEND) $(J_DUMPER_ARGS) $@ -c $<
 
-build/ast_samples/%.m.json: tests/%.m FacebookClangPlugin.dylib
+build/ast_samples/%.m.json: tests/%.m clang_tool.dylib
 	@mkdir -p build/ast_samples
 	$(CLANG_FRONTEND) $(IOSFLAGS) $(J_DUMPER_ARGS) $@ -c $<

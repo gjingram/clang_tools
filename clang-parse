@@ -1,0 +1,75 @@
+#!/usr/bin/python3
+
+import os
+import argparse
+
+clang_tool_path = os.path.dirname(os.path.abspath(__file__))
+if __name__ == "__main__":
+
+    aparse = argparse.ArgumentParser(
+        description="clang-tool invocation. Clang arguments fall through the argument parser")
+    aparse.add_argument("--abspath",
+                        help="Interpret file path as absolute",
+                        action="store_true",
+                        default=False)
+    aparse.add_argument("--file-base",
+                        help="Interpret file name as being relative to this",
+                        default=os.getcwd())
+    aparse.add_argument("--files",
+                        help="Headers to be parsed",
+                        nargs="+",
+                        default=None
+                       )
+    aparse.add_argument("--out-dir",
+                        help="Parse JSON out directory",
+                        default=None
+                       )
+    aparse.add_argument("--plugin-loc",
+                        help="Path to clang plugin",
+                        default=os.path.join(clang_tool_path, "libtooling"))
+    aparse.add_argument("--plugin-name",
+                        help="Name of plugin dylib",
+                        default="clang_tool.dylib")
+    aparse.add_argument("--clang-tool-verbose",
+                        help="clang-tool verbose output",
+                        action="store_true",
+                        default=False
+                        )
+
+    known, unknown = aparse.parse_known_args()
+    if not known.files:
+        raise RuntimeError("No input files provided")
+    
+    for _file in known.files:
+    
+        file_dirname = os.path.dirname(os.path.join(known.file_base, _file))
+        out_dirname = known.out_dir if known.out_dir else file_dirname
+
+        out_filename = _file.split(".")[0] + "-clang.json"
+
+        if not os.path.exists(out_dirname):
+            if known.clang_tool_verbose:
+                print("Creating output directory: {out_dirname}")
+            os.mkdir(out_dirname)
+   
+        out_filename = os.path.join(out_dirname, out_filename)
+ 
+        inv = "clang -fsyntax-only -Xpreprocessor -detailed-preprocessing-record"
+        for clang_arg in unknown:
+            inv += f" {clang_arg}"
+        inv += " -Xclang -load"
+        inv += f" -Xclang {os.path.join(known.plugin_loc, known.plugin_name)}"
+        inv += " -Xclang -plugin"
+        inv += " -Xclang JsonASTExporter"
+        inv += " -Xclang -plugin-arg-JsonASTExporter"
+        inv += f" -Xclang {out_filename} -c {_file}"
+
+        if known.clang_tool_verbose:
+            print("clang-tool")
+            print(f"Processing file: {_file}")
+            print(f"Output at: {os.path.join(out_dirname, out_filename)}")
+            print(f"{inv}")
+
+        stream = os.popen(inv)
+        out = stream.read()
+        print(out)

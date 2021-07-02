@@ -8,7 +8,6 @@ COPY libtooling/Makefile* libtooling/
 COPY libtooling/jsonlib/*.cpp libtooling/jsonlib/
 COPY libtooling/jsonlib/*.h libtooling/jsonlib/
 COPY libtooling/jsonlib/Makefile* libtooling/jsonlib
-COPY clang-parse ./
 
 RUN printf '#!/bin/bash\nclang-10 "$@"' > /usr/bin/clang && chmod +x /usr/bin/clang
 RUN printf '#!/bin/bash\nllvm-config-10 "$@"' > /usr/bin/llvm-config && chmod +x /usr/bin/llvm-config
@@ -26,7 +25,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH="/clang_tool:$PATH"
 
 COPY --from=build /build/libtooling/clang_tool.dylib /clang_tool/libtooling/clang_tool.dylib
-COPY --from=build /build/clang-parse /clang_tool
+COPY clang-parse /clang_tool/clang-parse
 RUN chmod +x /clang_tool/clang-parse
 
 COPY --from=build /usr/bin/clang /usr/bin/clang

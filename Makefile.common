@@ -14,10 +14,10 @@ endif
 
 # we assume that the targeted clang was configured with --enable-libcpp --enable-cxx14
 CFLAGS_Darwin+=-stdlib=libc++ -std=c++14 -Wno-switch
-LDFLAGS_Darwin+=-stdlib=libc++
+LDFLAGS_Darwin+=-lc++
 
-CFLAGS_Linux+=-std=c++14 -fPIC
-LDFLAGS_Linux+=
+CFLAGS_Linux+=-std=c++14 -stdlib=libstdc++ -fPIC
+LDFLAGS_Linux+=-lstdc++
 
 override CFLAGS+=$(CFLAGS_$(shell uname)) -g
 override LDFLAGS+=$(LDFLAGS_$(shell uname))

@@ -1,0 +1,40 @@
+[project]
+name = "ccm-clang-tools"
+version = "0.1.0"
+description = "CCModel clang plugin"
+authors = [
+    {name = "Gabriel Ingram", email = "gabriel.ingram@colorado.edu"},
+]
+dependencies = []
+requires-python = ">=3.8"
+dynamic = ["classifiers"]
+license = {text = "MIT"}
+
+
+[project.optional-dependencies]
+
+[tool.pdm]
+package-dir = "src"
+source-includes = [
+    "Makefile*",
+    "libtooling/"
+]
+excludes = [
+    "**/*.o",
+    "**/*.dylib"
+]
+
+[tool.pdm.dev-dependencies]
+publish = [
+    "twine~=3.4",
+]
+
+[project.urls]
+homepage = "https://github.com/gjingram/clang_tools"
+
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
+
+[project.scripts]
+clang-parse = "ccm_clang_tools.clang_parse:run_clang_parse"

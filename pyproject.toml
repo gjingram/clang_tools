@@ -16,8 +16,9 @@ license = {text = "MIT"}
 [tool.pdm]
 package-dir = "src"
 source-includes = [
-    "Makefile*",
-    "libtooling/"
+    "src/ccm_clang_tools/Makefile*",
+    "src/ccm_clang_tools/libtooling/",
+    "src/ccm_clang_tools/Dockerfile"
 ]
 excludes = [
     "**/*.o",

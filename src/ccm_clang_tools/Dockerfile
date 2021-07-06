@@ -23,10 +23,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 ENV PATH="/clang_tool/ccm_clang_tools:$PATH"
-ENV PYTHONPATH="/clang_tool/ccm_clang_tools:$PYTHONPATH"
+ENV PYTHONPATH="/clang_tool:$PYTHONPATH"
 
 COPY --from=build /build/libtooling/clang_tool.dylib /clang_tool/ccm_clang_tools/libtooling/clang_tool.dylib
-COPY ccm_clang_tools /clang_tool/ccm_clang_tools
+COPY *.py /clang_tool/ccm_clang_tools/
 RUN chmod +x /clang_tool/ccm_clang_tools/clang_parse.py
 
 COPY --from=build /usr/bin/clang /usr/bin/clang

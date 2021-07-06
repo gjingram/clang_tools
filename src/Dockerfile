@@ -1,13 +1,13 @@
 FROM teeks99/clang-ubuntu:10 AS build
 WORKDIR /build
 
-COPY src/Makefile* ./
-COPY src/libtooling/*.cpp libtooling/
-COPY src/libtooling/*.h libtooling/
-COPY src/libtooling/Makefile* libtooling/
-COPY src/libtooling/jsonlib/*.cpp libtooling/jsonlib/
-COPY src/libtooling/jsonlib/*.h libtooling/jsonlib/
-COPY src/libtooling/jsonlib/Makefile* libtooling/jsonlib
+COPY Makefile* ./
+COPY libtooling/*.cpp libtooling/
+COPY libtooling/*.h libtooling/
+COPY libtooling/Makefile* libtooling/
+COPY libtooling/jsonlib/*.cpp libtooling/jsonlib/
+COPY libtooling/jsonlib/*.h libtooling/jsonlib/
+COPY libtooling/jsonlib/Makefile* libtooling/jsonlib
 
 RUN printf '#!/bin/bash\nclang-10 "$@"' > /usr/bin/clang && chmod +x /usr/bin/clang
 RUN printf '#!/bin/bash\nllvm-config-10 "$@"' > /usr/bin/llvm-config && chmod +x /usr/bin/llvm-config
@@ -23,9 +23,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 ENV PATH="/clang_tool/ccm_clang_tools:$PATH"
+ENV PYTHONPATH="/clang_tool/ccm_clang_tools:$PYTHONPATH"
 
 COPY --from=build /build/libtooling/clang_tool.dylib /clang_tool/ccm_clang_tools/libtooling/clang_tool.dylib
-COPY src/ccm_clang_tools /clang_tool/ccm_clang_tools
+COPY ccm_clang_tools /clang_tool/ccm_clang_tools
 RUN chmod +x /clang_tool/ccm_clang_tools/clang_parse.py
 
 COPY --from=build /usr/bin/clang /usr/bin/clang

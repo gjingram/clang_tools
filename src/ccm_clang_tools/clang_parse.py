@@ -3,8 +3,7 @@ import argparse
 import subprocess
 
 from .utils import (
-    py_tool_path,
-    clang_tool_path,
+    clang_tool_path
 )
 
 def command(files, file_base, out_dir, clang_tool_verbose, 
@@ -118,6 +117,7 @@ def run_clang_parse():
                         default=False
                         )
     aparse.add_argument("--docker",
+                        "-dc",
                         help="Forward call to a docker container",
                         action="store_true",
                         default=False

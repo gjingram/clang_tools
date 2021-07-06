@@ -2,11 +2,10 @@ import os
 import subprocess
 
 clang_version_req = "10.0.0"
-py_tool_path = os.path.dirname(os.path.abspath(__file__))
-clang_tool_path = os.sep + os.path.join(*py_tool_path.split(os.sep)[:-1])
+clang_tool_path = os.path.dirname(os.path.abspath(__file__))
 
-def check_clang_version():
-    success = subprocess.run(["llvm-config", "--version"],
+def check_clang_version(llvm_conf: str = "llvm-config"):
+    success = subprocess.run([llvm_conf, "--version"],
             stdout=subprocess.PIPE,
             text=True)
     if success.stdout != f"{clang_version_req}\n":

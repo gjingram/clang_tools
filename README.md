@@ -18,7 +18,7 @@ Structure of the repository
 Quick start
 -----------
 
-Running `pdm install` in the project root directory will install all package dependencies and ccm\_clang\_tools into `__pypackages__` located in the project root. This will make all the python tools available to any compatible python interpreter.
+Running `pdm install` in the project root directory will install all package dependencies and ccm\_clang\_tools into `__pypackages__` located in the project root. This will make all the python tools available to any compatible python interpreter. Make sure that PEP 582 is [enabled globally](https://pdm.fming.dev/index.html#enable-pep-582-globally).
 
 To obtain a workable plugin, there are three options.
 

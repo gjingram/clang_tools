@@ -66,7 +66,7 @@ void NamePrinter<JSONWriter>::printTemplateArgList(
   clang::printTemplateArgumentList(tmpOS, Args, getPrintingPolicy());
   if (tmpOS.str().size() > templateLengthThreshold) {
     OS << "<";
-    //OS.write_hex(fnv64Hash(tmpOS));
+    // OS.write_hex(fnv64Hash(tmpOS));
     OS << tmpOS.str();
     OS << ">";
   } else {
@@ -109,7 +109,6 @@ void NamePrinter<JSONWriter>::printDeclName(const NamedDecl &D) {
   }
 
   return;
-
 }
 
 template <class JSONWriter>

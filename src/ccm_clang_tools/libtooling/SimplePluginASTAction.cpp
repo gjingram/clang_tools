@@ -162,13 +162,13 @@ const std::string &PluginASTOptionsBase::normalizeSourcePath(
   }
   // By convention, relative paths are only activated when repoRoot != "".
   if (repoRoot != "") {
-  /*
-    result = FileUtils::makeRelativePath(repoRoot,
-                                         iSysRoot,
-                                         keepExternalPaths,
-                                         allowSiblingsToRepoRoot,
-                                         absPath);
-  */
+    /*
+      result = FileUtils::makeRelativePath(repoRoot,
+                                           iSysRoot,
+                                           keepExternalPaths,
+                                           allowSiblingsToRepoRoot,
+                                           absPath);
+    */
   } else {
     result = absPath;
   }

@@ -1,40 +1,44 @@
-Facebook Clang Plugins
+ccm-clang-tools
 ======================
 
-This [repository](https://github.com/facebook/facebook-clang-plugins) aims to share some useful clang plugins developed at Facebook. They are mostly used by [infer](https://github.com/facebook/infer).
+[ccm-clang-tools](https://github.com/gjingram/clang_tools) is a project in development as a clang libtooling plugin frontend to the python project [ccmodel](https://github.com/gjingram/ccmodel). The goal of ccm-clang-tools is to provide ccmodel with substantial information about the content of C/C++ declarations so that they can be used downstream in code generation tools, documentation tools, etc.
 
-It contains frontend plugins to the [clang compiler](http://clang.llvm.org/) to process the syntax of source files directly to accomplish more general tasks; specifically, we have developed a clang-to-ocaml bridge to make code analyses easier.
+ccm-clang-tools is a derived work of [facebook-clang-plugins](https://github.com/facebook/facebook-clang-plugins), originally developed as a the clang front end to the Facebook [Infer](https://github.com/facebook/infer) tool. At the time of the ccm-clang-tools for, the original repository had been stale for a few years, and substantial modifications have been made to the underlying plugin to remove unnecessary JSON output and add dumps of nodes that are particularly interesting for use in the kinds of tools ccmodel is intended to drive.
+
+This project is organized as a python package using [PDM](https://pypi.org/project/pdm/) as the package manager; however, it is generally light on python and only uses it to provide a convenient CLI to the clang plugin.
+
+clang libtooling does not provide a stable API, which can be problematic. One modification to the facebook-clang-plugins tools is that the plugin has been updated to build and operate with clang 10. This version was chosen because it is provided as the standard for Ubuntu 20.04-- the latest LTS release. Moreover, the original tool was packaged with clang-9, which was required to be built from source. This strategy has been abandoned in favor of a [docker](https://www.docker.com/) container, with an image provided at [gjingram/ccm-clang-tools](https://hub.docker.com/repository/docker/gjingram/ccm-clang-tools). Alternatively, scripts are provided in this project that can be used to build the tool locally (requires clang 10 & make) if you have an allergy to docker, or to fetch dependencies and build the container locally.
 
 Structure of the repository
 ---------------------------
 
-- [`libtooling`](https://github.com/facebook/facebook-clang-plugins/tree/master/libtooling) : frontend plugins (currently a clang-to-json AST exporter),
-
-- [`clang-ocaml`](https://github.com/facebook/facebook-clang-plugins/tree/master/clang-ocaml) : OCaml libraries to process the JSON output of frontend plugins,
-
+- [`src/ccm_clang_tools`](https://github.com/gjingram/clang_tools/tree/master/src/ccm_clang_tools) : the root directory of the python project
+- [`src/ccm_clang_tools/libtooling`](https://github.com/gjingram/clang_tools/tree/master/src/ccm_clang_tools/libtooling) : The clang plugin source code, with `ASTExporter.h` being, by far, the most interesting file
 
 Quick start
 -----------
 
-The current version of the plugins requires recent version of the clang compiler, re-compiled from source. Clang source which is used by this project can be found in `clang/src/`
+Running `pdm install` in the project root directory will install all package dependencies and ccm\_clang\_tools into `__pypackages__` located in the project root. This will make all the python tools available to any compatible python interpreter.
 
-General instructions to compile clang can be found here: http://clang.llvm.org/get_started.html
+To obtain a workable plugin, there are three options.
 
-To compile and use the required version of clang, please run ./clang/setup.sh.
-Using this script should make the variable CLANG_PREFIX unnecessary to compile the plugin.
+Building locally requires clang 10 (in particular, `llvm-config` needs to be an alias for `llvm-config-10`, although I hope to change this). The command to build the plugin locally is:
 
-Caveat:
-- Because of the nature of C++, clang and the plugins need to be compiled with the exact same C++ libraries.
-- Also, the default stripping command of clang in release mode breaks plugins.
+    pdm run python -m ccm_clang_tools.build_plugin
 
-Once the target compiler is installed, `make test` should run the unit tests.
+To fetch the docker image, run:
 
-OCaml users may also run:
-```
-make -C clang-ocaml test  #requires proper ocaml libraries, see included clang-ocaml/README
-```
+    pdm run python -m ccm_clang_tools.get_clang_tool
 
-Additional configuration options are available in `Makefile.config`.
+And to build a docker image locally, run:
+
+    pdm run python -m ccm_clang_tools.get_clang_tool --build
+
+The tool itself is about as straightforward to use once one of the above has been run:
+
+    pdm run clang-parse --help
+
+for the command line options. Note that the `--docker` argument has to be supplied on the command line to forward arguments to a container.
 
 Licence
 -------

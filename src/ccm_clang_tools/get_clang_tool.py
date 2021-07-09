@@ -7,14 +7,14 @@ from .utils import (
 
 def docker_pull_clang_tool():
     stream = os.popen(
-            "docker pull gjingram/clang_tools:latest"
+            "docker pull gjingram/ccm-clang-tools:latest"
             )
     print(stream.read())
     return
 
 def docker_build_clang_tool():
     stream = os.popen(
-            f"docker build -t gjingram/clang_tools:latest {clang_tool_path}"
+            f"docker build -t gjingram/ccm-clang-tools:latest {clang_tool_path}"
             )
     print(stream.read())
     return

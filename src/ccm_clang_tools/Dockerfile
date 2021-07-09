@@ -5,7 +5,6 @@ COPY Makefile* ./
 COPY libtooling/*.cpp libtooling/
 COPY libtooling/*.h libtooling/
 COPY libtooling/Makefile* libtooling/
-COPY libtooling/jsonlib/*.cpp libtooling/jsonlib/
 COPY libtooling/jsonlib/*.h libtooling/jsonlib/
 COPY libtooling/jsonlib/Makefile* libtooling/jsonlib
 
@@ -35,5 +34,5 @@ RUN chmod +x /usr/bin/clang
 COPY --from=build /usr/bin/llvm-config /usr/bin/llvm-config
 RUN chmod +x /usr/bin/llvm-config
 
-CMD ["clang_parse.py", "--help"]
-ENTRYPOINT ["clang_parse.py"]
+CMD ["python3", "-m", "ccm_clang_tools.clang_parse", "--help"]
+ENTRYPOINT ["python3", "-m", "ccm_clang_tools.clang_parse"]

@@ -1,6 +1,7 @@
 import os
 import argparse
 import subprocess
+import pdb
 
 from .utils import (
     clang_tool_path
@@ -10,11 +11,12 @@ def command(files, file_base, out_dir, clang_tool_verbose,
         plugin_loc, plugin_name, clang):
 
     for _file in files:
-    
+   
+        file_basename = os.path.basename(_file)
         file_dirname = os.path.dirname(os.path.join(file_base, _file))
         out_dirname = out_dir if out_dir else file_dirname
 
-        out_filename = os.path.basename(_file).split(".")[0] + "-clang.json"
+        out_filename = file_basename.split(".")[0] + "-clang.json"
 
         if not os.path.exists(out_dirname):
             if clang_tool_verbose:
@@ -31,7 +33,8 @@ def command(files, file_base, out_dir, clang_tool_verbose,
         inv += " -Xclang -plugin"
         inv += " -Xclang JsonASTExporter"
         inv += " -Xclang -plugin-arg-JsonASTExporter"
-        inv += f" -Xclang {out_filename} -c {os.path.join(file_dirname, _file)}"
+        inv += f" -Xclang {out_filename} -c "
+        inv += f"{os.path.join(file_dirname, file_basename)}"
 
         if clang_tool_verbose:
             print("clang-parse")

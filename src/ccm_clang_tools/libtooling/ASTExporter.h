@@ -2395,7 +2395,7 @@ void ASTExporter<ATDWriter>::VisitUsingDirectiveDecl(
 
   bool HasNominatedNamespace = D->getNominatedNamespace();
 
-  OF.emitTag("location");
+  OF.emitTag("using_location");
   {
     ObjectScope oScope(OF, 1);
     dumpSourceLocation(D->getUsingLoc());

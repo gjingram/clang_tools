@@ -276,6 +276,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   void dumpName(const NamedDecl &decl);
   void dumpInputKind(const InputKind kind);
   void dumpIntegerTypeWidths(const TargetInfo &info);
+  void dumpDefaultArgStr(const Expr*);
 
   bool alwaysEmitParent(const Decl *D);
 
@@ -2134,6 +2135,18 @@ void ASTExporter<ATDWriter>::VisitParmVarDecl(const ParmVarDecl *D) {
     ObjectScope oScope(OF, 1);
     VisitValueDecl(D);
   }
+
+  bool hasDefault = D->hasDefaultArg();
+  OF.emitTag("has_default");
+  OF.emitBoolean(hasDefault);
+
+  OF.emitTag("default_value");
+  if (hasDefault && D->getDefaultArg()) {
+    dumpDefaultArgStr(D->getDefaultArg());
+  } else {
+    OF.emitString("None");
+  }
+
   return;
 }
 
@@ -2347,6 +2360,13 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
   OF.emitTag("parm_index_in_function");
   if (HasParmIndex) {
     OF.emitInteger(ParmDecl->getFunctionScopeIndex());
+  } else {
+    OF.emitString("None");
+  }
+
+  OF.emitTag("default_value");
+  if (HasDefault) {
+    dumpDefaultArgStr(D->getInit());
   } else {
     OF.emitString("None");
   }
@@ -3374,26 +3394,40 @@ void ASTExporter<ATDWriter>::dumpNonTypeTemplateParmDecl(
   }
 
   OF.emitTag("default");
-  if (has_default) {
-    Expr const *def = D->getDefaultArgument();
-
-    SourceLocation start_tok = def->getBeginLoc();
-    SourceLocation end_tok = def->getEndLoc();
-    unsigned int end_tok_len = Lexer::MeasureTokenLength(
-        end_tok, Context.getSourceManager(), Context.getLangOpts());
-    SourceLocation end_tok_end = end_tok.getLocWithOffset(end_tok_len);
-
-    SourceRange default_arg_range(start_tok, end_tok_end);
-    OF.emitString(
-        Lexer::getSourceText(CharSourceRange::getCharRange(default_arg_range),
-                             Context.getSourceManager(),
-                             Context.getLangOpts())
-            .str());
+  if (has_default && D->getDefaultArgument()) {
+    dumpDefaultArgStr(D->getDefaultArgument());
   } else {
     OF.emitString("None");
   }
 
   return;
+}
+
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpDefaultArgStr(Expr const *E) {
+    
+    SourceLocation start_tok = E->getBeginLoc();
+    SourceLocation end_tok = E->getEndLoc();
+
+    unsigned int end_tok_len = Lexer::MeasureTokenLength(
+            end_tok, Context.getSourceManager(), Context.getLangOpts()
+            );
+
+    SourceLocation end_tok_end = end_tok.getLocWithOffset(end_tok_len);
+    SourceRange def_arg_range(start_tok, end_tok_end);
+
+    OF.emitString(
+            Lexer::getSourceText(
+                CharSourceRange::getCharRange(
+                    def_arg_range
+                    ),
+                Context.getSourceManager(),
+                Context.getLangOpts()
+                ).str()
+            );
+
+    return;
+
 }
 
 template <class ATDWriter>

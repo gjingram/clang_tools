@@ -1,7 +1,6 @@
 import os
 import argparse
 import subprocess
-import pdb
 
 from .utils import (
     clang_tool_path
@@ -80,7 +79,7 @@ def docker_command(files, file_base, out_dir, clang_tool_verbose, clang):
     docker_inv += f" {mt_in}"
     docker_inv += f" {mt_out}"
     docker_inv += " gjingram/ccm-clang-tools:latest"
-    docker_inv += f" python3 -m ccm_clang_tools.clang_parse {inv}"
+    docker_inv += f" {inv}"
 
     stream = os.popen(docker_inv)
     out = stream.read()

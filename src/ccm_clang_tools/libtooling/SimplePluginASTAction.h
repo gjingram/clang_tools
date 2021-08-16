@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include <utility>
 
 #include <clang/AST/ASTConsumer.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -25,7 +27,8 @@
 namespace ASTPluginLib {
 
 struct PluginASTOptionsBase {
-  // source file being parsed
+  
+    // source file being parsed
   clang::FrontendInputFile inputFile;
   // output file for the plugin
   std::string outputFile;
@@ -107,6 +110,57 @@ struct EmptyPreprocessorHandler : public clang::PPCallbacks {
       std::shared_ptr<EmptyPreprocessorHandlerData> sharedData) {}
 };
 
+struct IncludesPreprocessorHandlerData {
+    std::vector<std::pair<std::string, std::string>> includes;
+};
+
+struct IncludesPreprocessorHandler : public clang::PPCallbacks {
+    
+    IncludesPreprocessorHandler(
+      clang::SourceManager &SM,
+      std::shared_ptr<PluginASTOptionsBase> options,
+      std::shared_ptr<IncludesPreprocessorHandlerData> sharedData
+    ) :
+        source_manager(SM),
+        opts(*options),
+        shared(*sharedData)
+    {
+        return;
+    }
+
+    virtual void InclusionDirective(
+      clang::SourceLocation hash_loc,
+      clang::Token const &include_token,
+      clang::StringRef file_name,
+      bool is_angled,
+      clang::CharSourceRange filename_range,
+      clang::FileEntry const *file,
+      clang::StringRef search_path,
+      clang::StringRef relative_path,
+      clang::Module const *imported,
+      clang::SrcMgr::CharacteristicKind file_type
+      ) override
+    {
+
+        if (source_manager.isInMainFile(hash_loc)) {
+            shared.includes.push_back(
+                    std::make_pair(
+                        search_path.str(),
+                        file_name.str()
+                        )
+                    );
+        }
+
+        return;
+    }
+
+    private:
+    clang::SourceManager            &source_manager;
+    PluginASTOptionsBase            &opts;
+    IncludesPreprocessorHandlerData &shared;
+
+};
+
 template <class PluginASTOptions = PluginASTOptionsBase,
           class PreprocessorHandler = EmptyPreprocessorHandler,
           class PreprocessorHandlerData = EmptyPreprocessorHandlerData>
@@ -120,6 +174,7 @@ class SimplePluginASTActionBase : public clang::PluginASTAction {
     preprocessor.addPPCallbacks(std::make_unique<PreprocessorHandler>(
         preprocessor.getSourceManager(), options, sharedData));
     clang::PluginASTAction::ExecuteAction();
+    return;
   }
 
   // Called when FrontendPluginRegistry is used.

@@ -208,6 +208,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   ASTContext &Context;
 
   const ASTExporterOptions &Options;
+  const ASTPluginLib::IncludesPreprocessorHandlerData &PreProcessor;
 
   std::unique_ptr<MangleContext> Mangler;
 
@@ -237,10 +238,12 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
  public:
   ASTExporter(raw_ostream &OS,
               ASTContext &Context,
-              const ASTExporterOptions &Opts)
+              const ASTExporterOptions &Opts,
+              const ASTPluginLib::IncludesPreprocessorHandlerData &PreProc)
       : OF(OS, Opts.jsonWriterOptions),
         Context(Context),
         Options(Opts),
+        PreProcessor(PreProc),
         Mangler(
             ItaniumMangleContext::create(Context, Context.getDiagnostics())),
         NullPtrStmt(new (Context) NullStmt(SourceLocation())),
@@ -1925,6 +1928,18 @@ void ASTExporter<ATDWriter>::VisitTranslationUnitDecl(
   OF.emitString(
       Options.normalizeSourcePath(Options.inputFile.getFile().str().c_str()));
 
+  OF.emitTag("includes");
+  {
+    ArrayScope aScope(OF);
+    for (auto &inc : PreProcessor.includes) {
+        ObjectScope oScope(OF);
+        OF.emitTag("search_path");
+        OF.emitString(inc.first.c_str());
+        OF.emitTag("file");
+        OF.emitString(inc.second.c_str());
+    }
+  } 
+
   OF.emitTag("input_kind");
   {
     ObjectScope oScope(OF, 1);
@@ -2146,6 +2161,9 @@ void ASTExporter<ATDWriter>::VisitParmVarDecl(const ParmVarDecl *D) {
   } else {
     OF.emitString("None");
   }
+
+  OF.emitTag("index");
+  OF.emitInteger(D->getFunctionScopeIndex());
 
   return;
 }
@@ -4946,22 +4964,23 @@ template <class ATDWriter = JsonWriter>
 class ExporterASTConsumer : public ASTConsumer {
  private:
   std::shared_ptr<ASTExporterOptions> options;
+  std::shared_ptr<ASTPluginLib::IncludesPreprocessorHandlerData> preproc;
   std::unique_ptr<raw_ostream> OS;
 
  public:
   using ASTConsumerOptions = ASTLib::ASTExporterOptions;
-  using PreprocessorHandler = ASTPluginLib::EmptyPreprocessorHandler;
-  using PreprocessorHandlerData = ASTPluginLib::EmptyPreprocessorHandlerData;
+  using PreprocessorHandler = ASTPluginLib::IncludesPreprocessorHandler;
+  using PreprocessorHandlerData = ASTPluginLib::IncludesPreprocessorHandlerData;
 
   ExporterASTConsumer(const CompilerInstance &CI,
                       std::shared_ptr<ASTConsumerOptions> options,
                       std::shared_ptr<PreprocessorHandlerData> sharedData,
                       std::unique_ptr<raw_ostream> &&OS)
-      : options(options), OS(std::move(OS)) {}
+      : options(options), preproc(sharedData), OS(std::move(OS)) {}
 
   virtual void HandleTranslationUnit(ASTContext &Context) {
     TranslationUnitDecl *D = Context.getTranslationUnitDecl();
-    ASTExporter<ATDWriter> P(*OS, Context, *options);
+    ASTExporter<ATDWriter> P(*OS, Context, *options, *preproc);
     P.dumpDecl(D);
   }
 };

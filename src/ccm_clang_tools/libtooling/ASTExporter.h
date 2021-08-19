@@ -73,7 +73,7 @@ struct ASTExporterOptions : ASTPluginLib::PluginASTOptionsBase {
   bool withPointers = true;
   bool dumpComments = true;
   bool useMacroExpansionLocation = true;
-  JSONWriter::JSONWriterOptions jsonWriterOptions = {.prettifyJson = true};
+  JSONWriter::JSONWriterOptions jsonWriterOptions = {.prettifyJson = false};
 
   void loadValuesFromEnvAndMap(
       const ASTPluginLib::PluginASTOptionsBase::argmap_t &map) {
@@ -2104,6 +2104,13 @@ void ASTExporter<ATDWriter>::VisitEnumConstantDecl(const EnumConstantDecl *D) {
   OF.emitTag("init_expr");
   if (Init) {
     dumpStmt(Init);
+  } else {
+    OF.emitString("None");
+  }
+
+  OF.emitTag("value");
+  if (Init) {
+    dumpDefaultArgStr(Init);
   } else {
     OF.emitString("None");
   }

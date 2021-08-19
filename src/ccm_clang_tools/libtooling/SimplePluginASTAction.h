@@ -146,7 +146,7 @@ struct IncludesPreprocessorHandler : public clang::PPCallbacks {
             shared.includes.push_back(
                     std::make_pair(
                         search_path.str(),
-                        file_name.str()
+                        file->getName().str()
                         )
                     );
         }

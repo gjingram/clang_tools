@@ -15,6 +15,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <sstream>
 
 namespace JSONWriter {
 
@@ -38,6 +39,7 @@ enum ContainerSizeKind {
 // not correspond to a well-formed JSON/JSON value
 template <class JSONEmitter>
 class GenWriter {
+
 
  protected:
   JSONEmitter emitter_;
@@ -307,6 +309,7 @@ class JsonEmitter {
   bool nextElementNeedsNewLine_;
   bool previousElementNeedsComma_;
   bool previousElementIsVariantTag_;
+  bool block_ = false;
 
  public:
   bool shouldSimpleVariantsBeEmittedAsStrings;
@@ -319,6 +322,15 @@ class JsonEmitter {
         previousElementNeedsComma_(false),
         previousElementIsVariantTag_(false),
         shouldSimpleVariantsBeEmittedAsStrings(true) {}
+
+  void block(bool block) {
+      block_ = block;
+      return;
+  }
+
+  bool block() {
+      return block_;
+  }
 
   void tab() {
     if (previousElementIsVariantTag_) {
@@ -374,6 +386,7 @@ class JsonEmitter {
   }
 
   void enterContainer(char c) {
+    if (block_) { return; }
     tab();
     os_ << c;
     indentLevel_++;
@@ -383,6 +396,7 @@ class JsonEmitter {
   }
 
   void leaveContainer(char c) {
+    if (block_) { return; }
     indentLevel_--;
     // suppress the last comma or variant separator
     previousElementNeedsComma_ = false;
@@ -394,9 +408,13 @@ class JsonEmitter {
   }
 
  public:
-  void emitEOF() { os_ << NEWLINE; }
+  void emitEOF() { 
+      if (block_) { return; }
+      os_ << NEWLINE;
+  }
 
   void emitNull() {
+    if (block_) { return; }
     tab();
     os_ << NULLSTR;
     previousElementNeedsComma_ = true;
@@ -404,6 +422,7 @@ class JsonEmitter {
     previousElementIsVariantTag_ = false;
   }
   void emitBoolean(bool val) {
+    if (block_) { return; }
     tab();
     os_ << (val ? TRUESTR : FALSESTR);
     previousElementNeedsComma_ = true;
@@ -411,6 +430,7 @@ class JsonEmitter {
     previousElementIsVariantTag_ = false;
   }
   void emitInteger(int64_t val) {
+    if (block_) { return; }
     tab();
     os_ << val;
     previousElementNeedsComma_ = true;
@@ -418,6 +438,7 @@ class JsonEmitter {
     previousElementIsVariantTag_ = false;
   }
   void emitString(const std::string &val) {
+    if (block_) { return; }
     tab();
     os_ << QUOTE;
     write_escaped(val);
@@ -427,6 +448,7 @@ class JsonEmitter {
     previousElementIsVariantTag_ = false;
   }
   void emitTag(const std::string &val) {
+    if (block_) { return; }
     tab();
     os_ << QUOTE;
     write_escaped(val);
@@ -441,6 +463,7 @@ class JsonEmitter {
     previousElementIsVariantTag_ = false;
   }
   void emitVariantTag(const std::string &val, bool hasArgs) {
+    if (block_) { return; }
     tab();
     os_ << QUOTE;
     write_escaped(val);
@@ -460,12 +483,14 @@ class JsonEmitter {
   void enterTuple(int size) { enterTuple(); }
   void leaveTuple() { leaveContainer(RBRACKET); }
   void enterVariant() {
+    if (block_) { return; }
     enterContainer(LBRACKET);
     // cancel indent
     indentLevel_--;
     nextElementNeedsNewLine_ = false;
   }
   void leaveVariant() {
+    if (block_) { return; }
     nextElementNeedsNewLine_ = false;
     leaveContainer(RBRACKET);
     indentLevel_++;
@@ -500,6 +525,15 @@ class JsonWriter : public GenWriter<JsonEmitter<OStream>> {
  public:
   JsonWriter(OStream &os, const JSONWriterOptions opts)
       : GenWriter<Emitter>(Emitter(os, opts)) {}
+
+  void block(bool block) {
+      GenWriter<JsonEmitter<OStream>>::emitter_.block(block);
+      return;
+  }
+
+  bool block() {
+      return GenWriter<JsonEmitter<OStream>>::emitter_.block();
+  }
 };
 } // namespace JSONWriter
 

@@ -32,6 +32,8 @@ class NamePrinter : public ConstDeclVisitor<NamePrinter<JSONWriter>> {
 
   // implementation is inspired by NamedDecl::printQualifiedName
   // but with better handling for anonymous structs,unions and namespaces
+  auto getContexts(NamedDecl const &D);
+  bool goodDeclName(const NamedDecl *D);
   void printDeclName(const NamedDecl &D);
 
   void VisitNamedDecl(const NamedDecl *D);
@@ -72,6 +74,47 @@ void NamePrinter<JSONWriter>::printTemplateArgList(
   } else {
     OS << tmpOS.str();
   }
+}
+
+template <class JSONWriter>
+auto NamePrinter<JSONWriter>::getContexts(NamedDecl const &D) {
+
+    const DeclContext *ctx = D.getDeclContext();
+    SmallVector<const NamedDecl *, 8> contexts;
+    contexts.push_back(&D);
+
+    if (ctx->isFunctionOrMethod() && !isa<TagDecl>(D)) {
+        ctx = nullptr;
+    }
+
+    while (ctx && isa<NamedDecl>(ctx)) {
+        bool should_print_ctx = true;
+        if (const NamespaceDecl *ND = dyn_cast<NamespaceDecl>(ctx)) {
+            if (ND->isInline()) {
+                should_print_ctx = false;
+            }
+        }
+        if (should_print_ctx) {
+            contexts.push_back(cast<NamedDecl>(ctx));
+        }
+        ctx = ctx->getParent();
+    }
+
+    return contexts;
+
+}
+
+
+template <class JSONWriter>
+bool NamePrinter<JSONWriter>::goodDeclName(NamedDecl const *D) {
+    auto contexts = getContexts(*D);
+    for (auto &ctx : contexts) {
+        std::string ctx_name = ctx->getNameAsString();
+        if (!ctx_name.rfind("__", 0)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 template <class JSONWriter>

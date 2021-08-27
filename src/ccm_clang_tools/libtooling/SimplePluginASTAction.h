@@ -58,6 +58,12 @@ struct PluginASTOptionsBase {
   bool keepExternalPaths = false;
   /* Resolve symlinks to their real path. */
   bool resolveSymlinks = false;
+
+  /* Recursion level determining how decls referenced by types
+   * are parsed
+   */
+  long recursionLevel = 0;
+
   /* do not emit string literals larger than this size */
   unsigned long maxStringSize = 65535;
 
@@ -182,8 +188,7 @@ class SimplePluginASTActionBase : public clang::PluginASTAction {
                  const std::vector<std::string> &args_) override {
     std::vector<std::string> args = args_;
     if (args.size() > 0) {
-      options->outputFile = args[0];
-      args.erase(args.begin());
+      options->outputFile = *(args.end()-1);
     }
     options->loadValuesFromEnvAndMap(PluginASTOptions::makeMap(args));
     return true;

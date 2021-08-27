@@ -115,6 +115,7 @@ void PluginASTOptionsBase::loadValuesFromEnvAndMap(const argmap_t map) {
   loadBool(map, "PREPEND_CURRENT_DIR", needBasePath);
   loadBool(map, "RESOLVE_SYMLINKS", resolveSymlinks);
   loadString(map, "STRIP_ISYSROOT", iSysRoot);
+  loadInt(map, "RECURSION_LEVEL", recursionLevel);
 
   if (needBasePath) {
     llvm::SmallString<1024> CurrentDir;

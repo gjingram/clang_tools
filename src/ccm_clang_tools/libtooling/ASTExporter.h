@@ -60,7 +60,6 @@
 #include "AttrParameterVectorStream.h"
 #include "NamePrinter.h"
 #include "SimplePluginASTAction.h"
-#include <iostream>
 #include <string>
 
 //===----------------------------------------------------------------------===//
@@ -73,7 +72,7 @@ struct ASTExporterOptions : ASTPluginLib::PluginASTOptionsBase {
   bool withPointers = true;
   bool dumpComments = true;
   bool useMacroExpansionLocation = true;
-  JSONWriter::JSONWriterOptions jsonWriterOptions = {.prettifyJson = false};
+  JSONWriter::JSONWriterOptions jsonWriterOptions = {.prettifyJson = true};
 
   void loadValuesFromEnvAndMap(
       const ASTPluginLib::PluginASTOptionsBase::argmap_t &map) {
@@ -241,6 +240,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   std::vector<const Type*>      new_types_referenced;
   std::list<const Decl*>        decls_written;
   std::list<const Type*>        types_written;
+  std::vector<const Decl*>      decls_inherited;
   bool parsing_refs = false;
 
  public:
@@ -298,6 +298,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   bool typeWritten(const Type *T);
   void referenceDecl(const Decl *D);
   bool declIsReferenced(const Decl *D);
+  bool declIsInherited(const Decl *D);
   int contextCanBlock(const DeclContext *DC);
   int declCanWrite(const Decl *D);
 
@@ -329,9 +330,34 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   int NAME##TupleSize();                \
   void visit##NAME(const NAME *D);
 
+#define NO_DECL_IMPL(NAME)                 \
+  int NAME##TupleSize() { return 1; } \
+  void Visit##NAME(const NAME *D) { \
+      OF.emitTag("skipped"); \
+      OF.emitBoolean(true); \
+      OF.emitTag("reason"); \
+      OF.emitString("Visitor not implemented"); \
+      if (dyn_cast<NamedDecl>(D)) { \
+          OF.emitTag("id"); \
+          ObjectScope oScope(OF, 1); \
+          dumpName(*cast<NamedDecl>(D)); \
+      } \
+      OF.emitTag("pointer"); \
+      dumpPointer(D); \
+      return; \
+  }
+
 #define NO_IMPL(NAME)                 \
   int NAME##TupleSize() { return 1; } \
-  void Visit##NAME(const NAME *D) { return; }
+  void Visit##NAME(const NAME *D) { \
+      OF.emitTag("skipped"); \
+      OF.emitBoolean(true); \
+      OF.emitTag("reason"); \
+      OF.emitString("Visitor for NAME not implemented"); \
+      OF.emitTag("pointer"); \
+      dumpPointer(D); \
+      return; \
+  }
 
 #define NO_LOWERCASE_IMPL(NAME)        \
   int NAME##TupleSize() { return -1; } \
@@ -340,42 +366,42 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   // Decls
   DECLARE_VISITOR(Decl)
   DECLARE_VISITOR(DeclContext)
-  NO_IMPL(AccessSpecDecl)
-  NO_IMPL(BlockDecl)
+  NO_DECL_IMPL(AccessSpecDecl)
+  NO_DECL_IMPL(BlockDecl)
   DECLARE_VISITOR(CapturedDecl)
-  NO_IMPL(ClassScopeFunctionSpecializationDecl)
-  NO_IMPL(EmptyDecl)
-  NO_IMPL(ExportDecl)
-  NO_IMPL(ExternCContextDecl)
-  NO_IMPL(FileScopeAsmDecl)
+  NO_DECL_IMPL(ClassScopeFunctionSpecializationDecl)
+  NO_DECL_IMPL(EmptyDecl)
+  NO_DECL_IMPL(ExportDecl)
+  NO_DECL_IMPL(ExternCContextDecl)
+  NO_DECL_IMPL(FileScopeAsmDecl)
   DECLARE_VISITOR(FriendDecl)
-  NO_IMPL(FriendTemplateDecl)
+  NO_DECL_IMPL(FriendTemplateDecl)
   DECLARE_VISITOR(ImportDecl)
-  NO_IMPL(LifetimeExtendedTemporaryDecl)
+  NO_DECL_IMPL(LifetimeExtendedTemporaryDecl)
   DECLARE_VISITOR(LinkageSpecDecl)
   DECLARE_VISITOR(NamedDecl)
-  NO_IMPL(LabelDecl)
+  NO_DECL_IMPL(LabelDecl)
   DECLARE_VISITOR(NamespaceDecl)
   DECLARE_VISITOR(NamespaceAliasDecl)
-  NO_IMPL(ObjCCompatibleAliasDecl)
-  NO_IMPL(ObjCContainerDecl)
-  NO_IMPL(ObjCCategoryDecl)
-  NO_IMPL(ObjCImplDecl)
-  NO_IMPL(ObjCCategoryImplDecl)
-  NO_IMPL(ObjCImplementationDecl)
-  NO_IMPL(ObjCInterfaceDecl)
-  NO_IMPL(ObjCProtocolDecl)
-  NO_IMPL(ObjCMethodDecl)
-  NO_IMPL(ObjCPropertyDecl)
-  NO_IMPL(TemplateDecl)
-  NO_IMPL(BuiltinTemplateDecl)
-  NO_IMPL(ConceptDecl)
-  NO_IMPL(RedeclarableTemplateDecl)
+  NO_DECL_IMPL(ObjCCompatibleAliasDecl)
+  NO_DECL_IMPL(ObjCContainerDecl)
+  NO_DECL_IMPL(ObjCCategoryDecl)
+  NO_DECL_IMPL(ObjCImplDecl)
+  NO_DECL_IMPL(ObjCCategoryImplDecl)
+  NO_DECL_IMPL(ObjCImplementationDecl)
+  NO_DECL_IMPL(ObjCInterfaceDecl)
+  NO_DECL_IMPL(ObjCProtocolDecl)
+  NO_DECL_IMPL(ObjCMethodDecl)
+  NO_DECL_IMPL(ObjCPropertyDecl)
+  NO_DECL_IMPL(TemplateDecl)
+  NO_DECL_IMPL(BuiltinTemplateDecl)
+  NO_DECL_IMPL(ConceptDecl)
+  NO_DECL_IMPL(RedeclarableTemplateDecl)
   DECLARE_VISITOR(ClassTemplateDecl)
   DECLARE_VISITOR(FunctionTemplateDecl)
   DECLARE_VISITOR(TypeAliasTemplateDecl)
-  NO_IMPL(VarTemplateDecl)
-  NO_IMPL(TemplateTemplateParmDecl)
+  NO_DECL_IMPL(VarTemplateDecl)
+  NO_DECL_IMPL(TemplateTemplateParmDecl)
   DECLARE_VISITOR(TypeDecl)
   DECLARE_VISITOR(TagDecl)
   DECLARE_VISITOR(RecordDecl)
@@ -383,52 +409,52 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(CXXRecordDecl)
   DECLARE_VISITOR(ClassTemplateSpecializationDecl)
   // Custom
-  // NO_IMPL(ClassTemplatePartialSpecialization)
-  NO_IMPL(TemplateTypeParmDecl)
-  NO_IMPL(TypedefNameDecl)
-  NO_IMPL(ObjCTypeParamDecl)
+  // NO_DECL_IMPL(ClassTemplatePartialSpecialization)
+  NO_DECL_IMPL(TemplateTypeParmDecl)
+  NO_DECL_IMPL(TypedefNameDecl)
+  NO_DECL_IMPL(ObjCTypeParamDecl)
   DECLARE_VISITOR(TypeAliasDecl)
   DECLARE_VISITOR(TypedefDecl)
-  NO_IMPL(UnresolvedUsingTypenameDecl)
-  NO_IMPL(UsingDecl)
+  NO_DECL_IMPL(UnresolvedUsingTypenameDecl)
+  NO_DECL_IMPL(UsingDecl)
   DECLARE_VISITOR(UsingDirectiveDecl)
-  NO_IMPL(UsingPackDecl)
-  NO_IMPL(UsingShadowDecl)
-  NO_IMPL(ConstructorUsingShadowDecl)
+  NO_DECL_IMPL(UsingPackDecl)
+  NO_DECL_IMPL(UsingShadowDecl)
+  NO_DECL_IMPL(ConstructorUsingShadowDecl)
   DECLARE_VISITOR(ValueDecl)
-  NO_IMPL(BindingDecl)
-  NO_IMPL(DeclaratorDecl)
+  NO_DECL_IMPL(BindingDecl)
+  NO_DECL_IMPL(DeclaratorDecl)
   DECLARE_VISITOR(FieldDecl)
-  NO_IMPL(ObjCAtDefsFieldDecl)
-  NO_IMPL(ObjCIvarDecl)
+  NO_DECL_IMPL(ObjCAtDefsFieldDecl)
+  NO_DECL_IMPL(ObjCIvarDecl)
   DECLARE_VISITOR(FunctionDecl)
-  NO_IMPL(CXXDeductionGuideDecl)
+  NO_DECL_IMPL(CXXDeductionGuideDecl)
   DECLARE_VISITOR(CXXMethodDecl)
   DECLARE_VISITOR(CXXConstructorDecl)
-  NO_IMPL(CXXConversionDecl)
-  NO_IMPL(CXXDestructorDecl)
-  NO_IMPL(MSPropertyDecl)
-  NO_IMPL(NonTypeTemplateParmDecl)
+  NO_DECL_IMPL(CXXConversionDecl)
+  NO_DECL_IMPL(CXXDestructorDecl)
+  NO_DECL_IMPL(MSPropertyDecl)
+  NO_DECL_IMPL(NonTypeTemplateParmDecl)
   DECLARE_VISITOR(VarDecl)
-  NO_IMPL(DecompositionDecl)
-  NO_IMPL(ImplicitParamDecl)
-  NO_IMPL(OMPCapturedExprDecl)
+  NO_DECL_IMPL(DecompositionDecl)
+  NO_DECL_IMPL(ImplicitParamDecl)
+  NO_DECL_IMPL(OMPCapturedExprDecl)
   DECLARE_VISITOR(ParmVarDecl)
-  NO_IMPL(VarTemplateSpecializationDecl)
-  NO_IMPL(VarTemplatePartialSpecializationDecl)
+  NO_DECL_IMPL(VarTemplateSpecializationDecl)
+  NO_DECL_IMPL(VarTemplatePartialSpecializationDecl)
   DECLARE_VISITOR(EnumConstantDecl)
   DECLARE_VISITOR(IndirectFieldDecl)
-  NO_IMPL(OMPDeclareMapperDecl)
-  NO_IMPL(OMPDeclareReductionDecl)
-  NO_IMPL(UnresolvedUsingValueDecl)
-  NO_IMPL(OMPAllocateDecl)
-  NO_IMPL(OMPRequiresDecl)
-  NO_IMPL(OMPThreadPrivateDecl)
-  NO_IMPL(ObjCPropertyImplDecl)
-  NO_IMPL(PragmaCommentDecl)
-  NO_IMPL(PragmaDetectMismatchDecl)
-  NO_IMPL(RequiresExprBodyDecl)
-  NO_IMPL(StaticAssertDecl)
+  NO_DECL_IMPL(OMPDeclareMapperDecl)
+  NO_DECL_IMPL(OMPDeclareReductionDecl)
+  NO_DECL_IMPL(UnresolvedUsingValueDecl)
+  NO_DECL_IMPL(OMPAllocateDecl)
+  NO_DECL_IMPL(OMPRequiresDecl)
+  NO_DECL_IMPL(OMPThreadPrivateDecl)
+  NO_DECL_IMPL(ObjCPropertyImplDecl)
+  NO_DECL_IMPL(PragmaCommentDecl)
+  NO_DECL_IMPL(PragmaDetectMismatchDecl)
+  NO_DECL_IMPL(RequiresExprBodyDecl)
+  NO_DECL_IMPL(StaticAssertDecl)
   DECLARE_VISITOR(TranslationUnitDecl)
 
   void VisitClassTemplatePartialSpecializationDecl(
@@ -735,7 +761,6 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   void dumpAttr(const Attr *A);
 
   DECLARE_VISITOR(Attr)
-  /*
   NO_IMPL(AddressSpaceAttr)
   NO_IMPL(NoDerefAttr)
   NO_IMPL(ObjCGCAttr)
@@ -777,9 +802,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   NO_IMPL(SwiftContextAttr)
   NO_IMPL(SwiftErrorResultAttr)
   NO_IMPL(SwiftIndirectResultAttr)
-  */
   DECLARE_VISITOR(AnnotateAttr)
-  /*
   NO_IMPL(CFConsumedAttr)
   NO_IMPL(CarriesDependencyAttr)
   NO_IMPL(NSConsumedAttr)
@@ -815,9 +838,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   NO_IMPL(AssertExclusiveLockAttr)
   NO_IMPL(AssertSharedLockAttr)
   NO_IMPL(AssumeAlignedAttr)
-  */
   DECLARE_VISITOR(AvailabilityAttr)
-  /*
   NO_IMPL(BPFPreserveAccessIndexAttr)
   NO_IMPL(BlocksAttr)
   NO_IMPL(C11NoReturnAttr)
@@ -979,9 +1000,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   NO_IMPL(ScopedLockableAttr)
   NO_IMPL(SectionAttr)
   NO_IMPL(SelectAnyAttr)
-  */
   DECLARE_VISITOR(SentinelAttr)
-  /*
   NO_IMPL(SetTypestateAttr)
   NO_IMPL(SharedTrylockFunctionAttr)
   NO_IMPL(SpeculativeLoadHardeningAttr)
@@ -999,9 +1018,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   NO_IMPL(UsedAttr)
   NO_IMPL(UuidAttr)
   NO_IMPL(VecReturnAttr)
-  */
   DECLARE_VISITOR(VisibilityAttr)
-  /*
   NO_IMPL(WarnUnusedAttr)
   NO_IMPL(WarnUnusedResultAttr)
   NO_IMPL(WeakAttr)
@@ -1043,7 +1060,6 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   NO_IMPL(InheritableAttr)
   NO_IMPL(InheritableParamAttr)
   NO_IMPL(ParameterABIAttr)
-  */
 
   void dumpTypeAttr(AttributedType::Kind kind);
 
@@ -1094,6 +1110,16 @@ template <class ATDWriter>
 bool ASTExporter<ATDWriter>::declIsReferenced(Decl const *D) {
     for (auto &decl_refd : decls_referenced) {
         if (D == decl_refd) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template <class ATDWriter>
+bool ASTExporter<ATDWriter>::declIsInherited(Decl const *D) {
+    for (auto &decl_inherited : decls_inherited) {
+        if (D == decl_inherited) {
             return true;
         }
     }
@@ -1306,21 +1332,21 @@ void ASTExporter<ATDWriter>::dumpDeclRef(const Decl &D, bool reference) {
   if (ND && !NamePrint.goodDeclName(ND)) {
       OF.emitBoolean(true);
       OF.emitTag("reason");
-      OF.emitString("bad_name");
+      OF.emitString("bad name");
       return;
   }
 
   if (IsHidden) {
       OF.emitBoolean(true);
       OF.emitTag("reason");
-      OF.emitString("decl_hidden");
+      OF.emitString("decl hidden");
       return;
   }
 
   if (VD && typeIsHidden(VD->getType())) {
       OF.emitBoolean(true);
       OF.emitTag("reason");
-      OF.emitBoolean("type_hidden");
+      OF.emitBoolean("type hidden");
       return;
   }
 
@@ -1398,6 +1424,13 @@ int ASTExporter<ATDWriter>::declCanWrite(const Decl *D) {
     if (static_cast<bool>(ND)) {
         ret = declIsHidden(D) ? -1 : ret;
     }
+    if (parsing_refs) {
+        if (Options.recursionLevel == 0) {
+            ret = -2;
+        } else if (Options.recursionLevel == 1 && !declIsInherited(D)) {
+            ret = -2;
+        }
+    }
     return ret;
 }
 
@@ -1423,6 +1456,8 @@ void ASTExporter<ATDWriter>::VisitDeclContext(const DeclContext *DC) {
               reason += "decl is not in the main file";
           } else if (write_ret == -1) {
               reason += "decl name is hidden";
+          } else if (write_ret == -2) {
+              reason += "recursion is not allowed";
           }
 
           OF.emitTag("reason");
@@ -1812,6 +1847,8 @@ void ASTExporter<ATDWriter>::dumpDecl(const Decl *D, bool force) {
           OF.emitString("decl not in main file");
       } else if (write_ret == -1) {
           OF.emitString("decl is hidden");
+      } if (write_ret == -2) {
+          OF.emitString("recursion is not allowed");
       }
 
       bool isNamed = isa<NamedDecl>(D);
@@ -3004,7 +3041,17 @@ void ASTExporter<ATDWriter>::VisitCXXRecordDecl(const CXXRecordDecl *D) {
     for (const auto base : D->bases()) {
       ObjectScope Scope(OF, 4);
       OF.emitTag("type");
+      Type const *baseType = base.getType().getTypePtr();
       dumpQualTypeNoQuals(base.getType());
+
+      if (dyn_cast<TagType>(baseType)) {
+          TagDecl const *tagDecl = cast<TagType>(baseType)->getDecl();
+          decls_inherited.push_back(tagDecl);
+      }
+      if (dyn_cast<TypedefType>(baseType)) {
+          TypedefNameDecl const *tDecl = cast<TypedefType>(baseType)->getDecl();
+          decls_inherited.push_back(tDecl);
+      }
 
       dumpAccessSpecifier(base.getAccessSpecifier());
 
@@ -3962,6 +4009,12 @@ int ASTExporter<ATDWriter>::ExprTupleSize() {
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitExpr(const Expr *Node) {
   if (typeIsHidden(Node->getType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Node type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(Node);
       return;
   }
   VisitStmt(Node);
@@ -4560,6 +4613,12 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitAdjustedType(const AdjustedType *T) {
 
   if (typeIsHidden(T->getAdjustedType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Adjusted type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(T);
       return;
   }
 
@@ -4659,6 +4718,12 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitAtomicType(const AtomicType *T) {
 
   if (typeIsHidden(T->getValueType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Value type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(T);
       return;
   }
 
@@ -4720,6 +4785,12 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitBlockPointerType(const BlockPointerType *T) {
 
   if (typeIsHidden(T->getPointeeType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Pointee type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(T);
       return;
   }
 
@@ -4782,6 +4853,12 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitDecltypeType(const DecltypeType *T) {
 
   if (typeIsHidden(T->getUnderlyingType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Underlying type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(T);
       return;
   }
 
@@ -4864,6 +4941,12 @@ void ASTExporter<ATDWriter>::VisitMemberPointerType(
     const MemberPointerType *T) {
 
   if (typeIsHidden(T->getPointeeType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Pointee type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(T);
       return;
   }
 
@@ -4892,6 +4975,12 @@ void ASTExporter<ATDWriter>::VisitParenType(const ParenType *T) {
   // this is just syntactic sugar
 
   if (typeIsHidden(T->getInnerType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Inner type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(T);
       return;
   }
 
@@ -4919,6 +5008,12 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitPointerType(const PointerType *T) {
 
   if (typeIsHidden(T->getPointeeType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Pointee type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(T);
       return;
   }
 
@@ -4946,6 +5041,12 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitReferenceType(const ReferenceType *T) {
 
   if (typeIsHidden(T->getPointeeType())) {
+      OF.emitTag("skipped");
+      OF.emitBoolean(true);
+      OF.emitTag("reason");
+      OF.emitString("Pointee type is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(T);
       return;
   }
 

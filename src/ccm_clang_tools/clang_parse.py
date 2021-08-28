@@ -1,10 +1,12 @@
 import os
 import argparse
 import subprocess
-import pdb
 
 from .utils import (
-    clang_tool_path
+    clang_tool_path,
+    find_symlinked_dir,
+    docker_image,
+    docker_tag
 )
 
 def command(
@@ -41,7 +43,7 @@ def command(
         for inc_path in include_paths:
             include += f" -Xclang -I{inc_path}"
 
-        inv = "clang -fsyntax-only -Xpreprocessor -detailed-preprocessing-record"
+        inv = "clang-10 -fsyntax-only -Xpreprocessor -detailed-preprocessing-record"
         inv += include
         for clang_arg in clang:
             inv += f" -Xclang {clang_arg}"
@@ -77,7 +79,8 @@ def docker_command(
         clang_tool_verbose,
         recursion_level,
         clang,
-        force_out_in_src):
+        force_out_in_src,
+        prettify):
 
     call_dir = os.getcwd()
     inv = ""
@@ -87,9 +90,23 @@ def docker_command(
     mt_in = f" -v {file_base}:/src"
     inv += " --file-base /src"
 
+    src_symlinks = {}
+    for psymlink in files:
+        find_symlinked_dir(file_base, psymlink, src_symlinks)
+    inc_symlinks = {}
+    for psymlink in include_paths:
+        find_symlinked_dir("", psymlink, inc_symlinks)
+
+    mt_symlinks = ""
+    for mount_to, target in src_symlinks.items():
+        mt_symlinks += f" -v {target}:{os.path.join('/src', mount_to)}"
+    for mount_to, target in inc_symlinks.items():
+        mt_symlinks += f" -v {target}:{mount_to}"
+
     mt_includes = ""
     for inc_path in include_paths:
-        mt_includes += " -v {inc_path}:{inc_path}"
+        mt_includes += f" -v {inc_path}:{inc_path}"
+
 
     inv += " --files"
     for _file in files:
@@ -123,10 +140,12 @@ def docker_command(
         inv += f" {clang_arg}"
 
     docker_inv = "docker run -it"
+    docker_inv += " --rm"
     docker_inv += f" {mt_in}"
     docker_inv += f" {mt_out}"
     docker_inv += f" {mt_includes}"
-    docker_inv += " gjingram/ccm-clang-tools:latest"
+    docker_inv += f" {mt_symlinks}"
+    docker_inv += f" {docker_image}:{docker_tag}"
     docker_inv += f" {inv}"
 
     stream = os.popen(docker_inv)

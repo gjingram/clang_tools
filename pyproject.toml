@@ -1,6 +1,6 @@
 [project]
 name = "ccm-clang-tools"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = [
     {name = "Gabriel Ingram", email = "gabriel.ingram@colorado.edu"},
@@ -19,23 +19,23 @@ homepage = "https://github.com/gjingram/clang_tools"
 build = "build_bin"
 package-dir = "src"
 includes = [
-    "src/**/*.py",
-    "src/ccm_clang_tools/libtooling/clang_tool.dylib",
-    "src/ccm_clang_tools/libtooling/ast_exporter_bin"
-]
-source-includes = [
     "build_bin.py",
     "LICENSE",
     "README.md",
-    "src/ccm_clang_tools/Makefile*",
-    "src/ccm_clang_tools/libtooling/",
+    "src/**/*.py",
+    "src/ccm_clang_tools/**/Makefile*",
+    "src/ccm_clang_tools/libtooling/*.cpp",
+    "src/ccm_clang_tools/libtooling/jsonlib/*.cpp",
+    "src/ccm_clang_tools/libtooling/**/*.h",
     "src/ccm_clang_tools/Dockerfile",
     "src/ccm_clang_tools/LICENSE",
-    "src/ccm_clang_tools/LLVM-LICENSE",
-    "src/ccm_clang_tools/build_plugin.py"
+    "src/ccm_clang_tools/LLVM-LICENSE"
 ]
 excludes = [
     "**/*.o",
+    "**/*.dylib",
+    "**/*bin",
+    "**/*test.cpp"
 ]
 
 [tool.pdm.dev-dependencies]
@@ -49,4 +49,3 @@ requires = [
     "setuptools"
     ]
 build-backend = "pdm.pep517.api"
-

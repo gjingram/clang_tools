@@ -42,7 +42,7 @@ HEADERS?=
 RUNTEST=$(LEVEL)/scripts/run_test.sh
 
 LDFLAGS_DYLIB=$(LDFLAGS)
-LDFLAGS_DYLIB+=-Wl, -rpath -Wl, -undefined=dynamic_lookup -Wl,-flat_namespace -Wl,--undefined=suppress -Wl, -dynamiclib -Wl, -shared -Wl, $(shell llvm-config --ldflags) -Wl
+LDFLAGS_DYLIB+=-Wl, -rpath -Wl, -undefined=dynamic_lookup -Wl,-flat_namespace -Wl,--undefined=suppress -Wl, -dynamiclib -Wl, -shared -Wl, $(shell llvm-config-10 --ldflags) -Wl
 
 CLANG_TOOL_LIBS := \
     -lclangFrontend \

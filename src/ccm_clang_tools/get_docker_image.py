@@ -12,24 +12,22 @@ from .utils import (
     check_image_exists,
     check_source_exists,
     check_dylib_exists,
-    docker_image,
-    docker_tag
+    get_docker_image_name
 )
 
 def docker_pull_clang_tool(
         inform: bool = True
         ) -> docker.models.images.Image:
-
+    image_name = get_docker_image_name()
     image = check_image_exists(raise_=False)
     if image is not None:
         if inform:
-            print("Docker image {docker_image}:{docker_tag} already exists")
+            print(f"Docker image {image_name} already exists")
         return image
 
     dclient = docker.from_env()
     image = dclient.images.pull(
-            docker_image,
-            tag=docker_tag
+            image_name
             )
 
     return image
@@ -37,17 +35,17 @@ def docker_pull_clang_tool(
 def docker_build_clang_tool(
         inform: bool = True
         ) -> docker.models.images.Image:
-
+    image_name = get_docker_image_name()
     image = check_image_exists(raise_=False)
     if image is not None:
         if inform:
-            print("Docker image {docker_image}:{docker_tag} already exists")
+            print(f"Docker image {image_name} already exists")
         return image
     check_source_exists(raise_=True)
     dclient = docker.from_env()
     image = dclient.images.build(
             path=clang_tool_path,
-            tag=f"{docker_image}:{docker_tag}",
+            tag=image_name,
             pull=True
             )
     dclient.images.prune()
@@ -56,13 +54,16 @@ def docker_build_clang_tool(
 if __name__ == "__main__":
 
     aparse = argparse.ArgumentParser(
-            description="A utility to pull or build the clang-tool docker container"
+            description=(
+                "A utility to pull or build the clang-tool" +
+                " docker container")
             )
     aparse.add_argument(
             "method",
             choices=("build", "pull"),
             help=(
-                "Acquire docker image by building locally or pulling a repository"
+                "Acquire docker image by building locally" +
+                " or pulling a repository"
                 ),
             )
 

@@ -4,9 +4,9 @@ import subprocess
 
 from .utils import (
     clang_tool_path,
+    clang_version_req,
     find_symlinked_dir,
-    docker_image,
-    docker_tag
+    get_docker_image_name
 )
 
 def command(
@@ -43,7 +43,8 @@ def command(
         for inc_path in include_paths:
             include += f" -Xclang -I{inc_path}"
 
-        inv = "clang-10 -fsyntax-only -Xpreprocessor -detailed-preprocessing-record"
+        inv = f"clang-{clang_version_req} -fsyntax-only -Xpreprocessor"
+        inv += " -detailed-preprocessing-record"
         inv += include
         for clang_arg in clang:
             inv += f" -Xclang {clang_arg}"
@@ -118,6 +119,8 @@ def docker_command(
         mt_out = f" -v {out_dir}:/out"
     else:
         mt_out = f" -v {file_base}:/out"
+        force_out_in_src = True
+
     inv += " --out-dir /out"
 
     if clang_tool_verbose:
@@ -145,7 +148,7 @@ def docker_command(
     docker_inv += f" {mt_out}"
     docker_inv += f" {mt_includes}"
     docker_inv += f" {mt_symlinks}"
-    docker_inv += f" {docker_image}:{docker_tag}"
+    docker_inv += f" {get_docker_image_name()}"
     docker_inv += f" {inv}"
 
     stream = os.popen(docker_inv)
@@ -158,7 +161,12 @@ def docker_command(
 def run_clang_parse():
 
     aparse = argparse.ArgumentParser(
-        description="clang-tool invocation. Clang arguments fall through the argument parser")
+            prog="clang-parse",
+            description=(
+                "clang-parse invocation. Clang arguments fall through" +
+                "the argument parser"
+                )
+            )
     aparse.add_argument(
             "--abspath",
             help="Interpret file path as absolute",

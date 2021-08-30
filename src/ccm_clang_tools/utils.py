@@ -2,11 +2,14 @@ import os
 import shutil
 from typing import Dict
 
-clang_tools_version = "0.1.1"
-docker_image = f"gjingram/ccm-clang-tools"
-docker_tag = clang_tools_version
 clang_version_req = "10"
 clang_tool_path = os.path.dirname(os.path.abspath(__file__))
+
+def get_docker_image_name() -> str:
+    import importlib.metadata
+    tag = importlib.metadata.version("ccm_clang_tools")
+    image = "gjingram/ccm-clang-tools"
+    return f"{image}:{tag}"
 
 def check_clang_version(raise_: bool = True) -> bool:
     good_clang = shutil.which(f"clang-{clang_version_req}") is not None
@@ -73,10 +76,11 @@ def check_image_exists(raise_: bool = True) -> "docker.models.images.Image":
     import docker
 
     dclient = docker.from_env()
+    image_name = get_docker_image_name()
     image_exists = False
     image = None
     try:
-        image = dclient.images.get(f"{docker_image}:{docker_tag}")
+        image = dclient.images.get(image_name)
     except docker.errors.ImageNotFound:
         if raise_:
             raise docker.errors.ImageNotFound

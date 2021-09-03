@@ -33,7 +33,6 @@
 #include <memory>
 #include <set>
 #include <list>
-
 #include <clang/AST/ASTConsumer.h>
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/Attr.h>
@@ -336,7 +335,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
       OF.emitTag("skipped"); \
       OF.emitBoolean(true); \
       OF.emitTag("reason"); \
-      OF.emitString("Visitor not implemented"); \
+      OF.emitString("Visitor for " #NAME " not implemented"); \
       if (dyn_cast<NamedDecl>(D)) { \
           OF.emitTag("id"); \
           ObjectScope oScope(OF, 1); \
@@ -353,7 +352,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
       OF.emitTag("skipped"); \
       OF.emitBoolean(true); \
       OF.emitTag("reason"); \
-      OF.emitString("Visitor for NAME not implemented"); \
+      OF.emitString("Visitor for " #NAME " not implemented"); \
       OF.emitTag("pointer"); \
       dumpPointer(D); \
       return; \
@@ -1840,7 +1839,7 @@ void ASTExporter<ATDWriter>::dumpDecl(const Decl *D, bool force) {
   OF.emitTag("skipped");
 
   int write_ret = declCanWrite(D);
-  if (write_ret <= 0 && !force && !parsing_refs) {
+  if (write_ret <= 0 && !force) {
       OF.emitBoolean(true);
       OF.emitTag("reason");
       if (write_ret == 0) {

@@ -25,6 +25,7 @@ def docker_pull_clang_tool(
             print(f"Docker image {image_name} already exists")
         return image
 
+    print("Pulling the ccm_clang_tools docker image...")
     dclient = docker.from_env()
     image = dclient.images.pull(
             image_name
@@ -42,6 +43,8 @@ def docker_build_clang_tool(
             print(f"Docker image {image_name} already exists")
         return image
     check_source_exists(raise_=True)
+
+    print("Building the ccm_clang_tools docker image...")
     dclient = docker.from_env()
     image = dclient.images.build(
             path=clang_tool_path,

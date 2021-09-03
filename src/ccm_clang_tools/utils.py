@@ -21,12 +21,18 @@ def check_clang_version(raise_: bool = True) -> bool:
                 f"ccm_clang_tools requires clang-{clang_version_req} " +
                 "to build a plugin"
                 )
+    return good_clang
+
+def check_clang_dev_exists(raise_: bool = True) -> bool:
+    llvm_config_exists = (
+            shutil.which(f"llvm-config-{clang_version_req}") is not None
+            )
     if not llvm_config_exists and raise_:
         raise RuntimeError(
-                f"ccm_clang_tools requires clang development tools " +
+                "ccm_clang_tools requires clang development tools " +
                 "to build a plugin"
                 )
-    return good_clang and llvm_config_exists
+    return llvm_config_exists
 
 def check_dylib_exists(raise_: bool = True) -> bool:
     dylib_exists = os.path.exists(
@@ -104,6 +110,3 @@ def find_symlinked_dir(
                continue
            rel_path_to_tgt[check_rel_path] = target
     return
-
-
-

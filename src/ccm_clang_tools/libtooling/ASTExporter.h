@@ -233,6 +233,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
 
   NamePrinter<ATDWriter> NamePrint;
 
+  std::vector<const Decl*>      all_decls;
   std::list<const Decl*>        decls_referenced;
   std::list<const Type*>        types_referenced;
   std::vector<const Decl*>      new_decls_referenced;
@@ -1130,13 +1131,10 @@ void ASTExporter<ATDWriter>::referenceDecl(Decl const *D) {
 
     TranslationUnitDecl const *TU = 
         dyn_cast<TranslationUnitDecl>(D);
-    NamespaceDecl const *ND =
-        dyn_cast<NamespaceDecl>(D);
 
     bool isTU = static_cast<bool>(TU);
-    bool isNS = static_cast<bool>(ND);
 
-    if (!D || isTU || isNS) {
+    if (!D || isTU) {
         return;
     }
 
@@ -1167,18 +1165,34 @@ void ASTExporter<ATDWriter>::writePointer(bool withPointers, const void *Ptr) {
 
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpDeclPointer(Decl const *Ptr) {
-  if (!inMainFile(Ptr)) {
+  Decl const *ptr_use = Ptr;
+  if (ptr_use) {
+      if (!Ptr->isCanonicalDecl()) {
+          ptr_use = Ptr->getCanonicalDecl();
+      }
+
+      bool decl_recorded = false;
+      for (auto &decl : all_decls) {
+        if (decl->getCanonicalDecl() == ptr_use) {
+            ptr_use = decl;
+            decl_recorded = true;
+        }
+      }
+      if (!decl_recorded) {
+          all_decls.push_back(ptr_use);
+      }
+
       bool alreadyReferenced = false;
       for (auto &decl : decls_referenced) {
-          if (decl == Ptr) {
+          if (decl->getCanonicalDecl() == ptr_use) {
               alreadyReferenced = true;
           }
       }
       if (!alreadyReferenced) {
-          referenceDecl(Ptr);
+          referenceDecl(ptr_use);
       }
   }
-  dumpPointer(Ptr);
+  dumpPointer(ptr_use);
   return;
 }
 
@@ -1331,14 +1345,18 @@ void ASTExporter<ATDWriter>::dumpDeclRef(const Decl &D, bool reference) {
   if (ND && !NamePrint.goodDeclName(ND)) {
       OF.emitBoolean(true);
       OF.emitTag("reason");
-      OF.emitString("bad name");
+      OF.emitString("decl is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(&D);
       return;
   }
 
   if (IsHidden) {
       OF.emitBoolean(true);
       OF.emitTag("reason");
-      OF.emitString("decl hidden");
+      OF.emitString("decl is hidden");
+      OF.emitTag("pointer");
+      dumpPointer(&D);
       return;
   }
 
@@ -1346,6 +1364,8 @@ void ASTExporter<ATDWriter>::dumpDeclRef(const Decl &D, bool reference) {
       OF.emitBoolean(true);
       OF.emitTag("reason");
       OF.emitBoolean("type hidden");
+      OF.emitTag("pointer");
+      dumpPointer(&D);
       return;
   }
 
@@ -1387,13 +1407,13 @@ int ASTExporter<ATDWriter>::DeclContextTupleSize() {
 
 template <class ATDWriter>
 bool ASTExporter<ATDWriter>::declIsHidden(const Decl *D) {
+  bool excepted = false;
+  excepted |= isa<ParmVarDecl>(D);
+  excepted |= isa<TemplateTemplateParmDecl>(D);
+  excepted |= isa<TemplateTypeParmDecl>(D);
+  excepted |= isa<NonTypeTemplateParmDecl>(D);
   NamedDecl const *ND = dyn_cast<NamedDecl>(D);
-  if (static_cast<bool>(ND)) {
-      std::string name = ND->getNameAsString();
-      return (!name.rfind("__", 0) ||
-              !name.rfind("typename __", 0));
-  }
-  return false;
+  return !NamePrint.goodDeclName(ND) && !excepted;
 }
 
 template <class ATDWriter>
@@ -1407,11 +1427,17 @@ template <class ATDWriter>
 int ASTExporter<ATDWriter>::contextCanBlock(const DeclContext *DC) {
     int ret = 0;
     bool isTranslationUnit = DC->isTranslationUnit();
+    bool isNS = isa<NamespaceDecl>(DC);
+    bool oofNamespace = false;
+    if (isNS) {
+        oofNamespace = !inMainFile(dyn_cast<NamespaceDecl>(DC));
+    }
     Decl const *D = dyn_cast<Decl>(DC);
     ret = static_cast<int>(!isTranslationUnit);
     if (isa<NamedDecl>(DC)) {
         ret = declIsHidden(D) ? 2 : ret;
     }
+    ret = oofNamespace ? 3: ret;
     return ret;
 }
 
@@ -1423,11 +1449,14 @@ int ASTExporter<ATDWriter>::declCanWrite(const Decl *D) {
     if (static_cast<bool>(ND)) {
         ret = declIsHidden(D) ? -1 : ret;
     }
-    if (parsing_refs) {
+    if (parsing_refs && !inMainFile(D)) {
         if (Options.recursionLevel == 0) {
             ret = -2;
         } else if (Options.recursionLevel == 1 && !declIsInherited(D)) {
             ret = -2;
+        }
+        if (dyn_cast<NamespaceDecl>(D)) {
+            ret = -3;
         }
     }
     return ret;
@@ -1457,6 +1486,8 @@ void ASTExporter<ATDWriter>::VisitDeclContext(const DeclContext *DC) {
               reason += "decl name is hidden";
           } else if (write_ret == -2) {
               reason += "recursion is not allowed";
+          } else if (write_ret == -3) {
+              reason += "out-of-file namespace";
           }
 
           OF.emitTag("reason");
@@ -1510,13 +1541,18 @@ void ASTExporter<ATDWriter>::VisitDeclContext(const DeclContext *DC) {
 
   OF.emitTag("declarations");
 
-  ArrayScope aScope(OF, declsToDump.size());
-  for (auto I : declsToDump) {
-    if (!parsing_refs && !inMainFile(I)) {
-        continue;
-    }
-    dumpDecl(I);
+  {
+      ArrayScope aScope(OF, declsToDump.size());
+      for (auto I : declsToDump) {
+        if (!parsing_refs && !inMainFile(I)) {
+            continue;
+        }
+        dumpDecl(I);
+      }
   }
+
+  OF.emitTag("pointer");
+  dumpPointer(DC);
 
   if (!OF.block()) {
     decls_written.push_back(cast<Decl>(DC));
@@ -1753,8 +1789,8 @@ void ASTExporter<ATDWriter>::dumpNestedNameSpecifierLoc(
         NamespaceDecl const *ND = NNS.getNestedNameSpecifier()->getAsNamespace();
         if (NamePrint.goodDeclName(ND)) {
             dumpDeclRef(
-                    *NNS.getNestedNameSpecifier()->getAsNamespace(),
-                    inMainFile(NNS.getNestedNameSpecifier()->getAsNamespace()));
+                    *NNS.getNestedNameSpecifier()->getAsNamespace()
+                    );
         } else {
             dumpName(*ND);
         }
@@ -1768,8 +1804,8 @@ void ASTExporter<ATDWriter>::dumpNestedNameSpecifierLoc(
         NamespaceDecl const *ND = NNS.getNestedNameSpecifier()->getAsNamespace();
         if (NamePrint.goodDeclName(ND)) {
             dumpDeclRef(
-                *ND,
-                inMainFile(ND));
+                *ND
+                );
         } else {
             dumpName(*ND);
         }
@@ -1846,8 +1882,10 @@ void ASTExporter<ATDWriter>::dumpDecl(const Decl *D, bool force) {
           OF.emitString("decl not in main file");
       } else if (write_ret == -1) {
           OF.emitString("decl is hidden");
-      } if (write_ret == -2) {
+      } else if (write_ret == -2) {
           OF.emitString("recursion is not allowed");
+      } else if (write_ret == -3) {
+          OF.emitString("out-of-file namespace");
       }
 
       bool isNamed = isa<NamedDecl>(D);
@@ -1887,9 +1925,7 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitDecl(const Decl *D) {
   {
 
-    bool ShouldEmitParentPointer =
-        alwaysEmitParent(D) ||
-        D->getLexicalDeclContext() != D->getDeclContext();
+    bool ShouldEmitParentPointer = true;
 
     Module *M = D->getImportedOwningModule();
     if (!M) {
@@ -2060,8 +2096,8 @@ void ASTExporter<ATDWriter>::VisitNamespaceDecl(const NamespaceDecl *D) {
     NamedDecl const *ND = cast<NamedDecl>(D);
     if (NamePrint.goodDeclName(ND)) {
         dumpDeclRef(
-                *D->getOriginalNamespace(),
-                inMainFile(D->getOriginalNamespace()));
+                *D->getOriginalNamespace()
+                );
     } else {
         dumpName(*ND);
     }
@@ -2229,6 +2265,9 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitTranslationUnitDecl(
     const TranslationUnitDecl *D) {
 
+  OF.emitTag("pointer");
+  dumpPointer(D);
+
   OF.emitTag("input_path");
   OF.emitString(
       Options.normalizeSourcePath(Options.inputFile.getFile().str().c_str()));
@@ -2288,7 +2327,11 @@ void ASTExporter<ATDWriter>::VisitTranslationUnitDecl(
     }
 
     for (auto &decl : new_decls_cp) {
-        if (!processed_map[decl] && !inMainFile(decl)) {
+        bool isNamed = isa<NamedDecl>(decl);
+        if (isNamed && declIsHidden(dyn_cast<NamedDecl>(decl))) {
+            continue;
+        }
+        if (!processed_map[decl]) {
             dumpDecl(decl);
             processed_map[decl] = pointerMap[decl];
         }
@@ -2303,10 +2346,6 @@ void ASTExporter<ATDWriter>::VisitTranslationUnitDecl(
     ArrayScope aScope(OF, 1);
     for (auto &decl : decls_referenced) {
       if (declWritten(decl)) { continue; }
-      bool isNamed = isa<NamedDecl>(decl);
-      if (isNamed && !NamePrint.goodDeclName(cast<NamedDecl>(decl))) {
-          continue;
-      }
       dumpDecl(decl);
     }
   }
@@ -2829,8 +2868,8 @@ void ASTExporter<ATDWriter>::VisitUsingDirectiveDecl(
     NamespaceDecl const *ND = D->getNominatedNamespace();
     if (NamePrint.goodDeclName(cast<NamedDecl>(ND))) {
         dumpDeclRef(
-                *ND,
-                inMainFile(ND));
+                *ND
+                );
     } else {
         dumpName(*ND);
     }
@@ -2877,8 +2916,8 @@ void ASTExporter<ATDWriter>::VisitNamespaceAliasDecl(
     NamespaceDecl const *ND = D->getNamespace();
     if (NamePrint.goodDeclName(cast<NamedDecl>(ND))) {
         dumpDeclRef(
-                *ND,
-                inMainFile(ND));
+                *ND
+                );
     } else {
         dumpName(*ND);
     }
@@ -3084,8 +3123,8 @@ void ASTExporter<ATDWriter>::VisitCXXRecordDecl(const CXXRecordDecl *D) {
 
   OF.emitTag("destructor");
   if (isComplete && DestructorDecl) {
-    ObjectScope oScope(OF, 1);
     if (NamePrint.goodDeclName(cast<NamedDecl>(DestructorDecl))) {
+        ObjectScope oScope(OF, 1);
         dumpDeclRef(*DestructorDecl);
     } else {
         OF.emitString("None");
@@ -3737,6 +3776,10 @@ void ASTExporter<ATDWriter>::VisitTypeAliasTemplateDecl(
     OF.emitString("None");
   }
 
+  if (!OF.block()) {
+      decls_written.push_back(D);
+  }
+
   return;
 }
 
@@ -3749,6 +3792,7 @@ void ASTExporter<ATDWriter>::VisitClassTemplatePartialSpecializationDecl(
     ObjectScope oScope(OF, 1);
     VisitClassTemplateSpecializationDecl(D);
   }
+
   return;
 }
 

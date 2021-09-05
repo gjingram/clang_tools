@@ -110,7 +110,7 @@ bool NamePrinter<JSONWriter>::goodDeclName(NamedDecl const *D) {
     auto contexts = getContexts(*D);
     for (auto &ctx : contexts) {
         std::string ctx_name = ctx->getNameAsString();
-        if (!ctx_name.rfind("__", 0)) {
+        if (!ctx_name.rfind("__", 0) || !ctx_name.rfind("typename __", 0)) {
             return false;
         }
     }

@@ -2542,11 +2542,12 @@ void ASTExporter<ATDWriter>::VisitIndirectFieldDecl(
       OF,
       std::distance(D->chain_begin(), D->chain_end())); // not covered by tests
   for (auto I : D->chain()) {
-    ObjectScope oScope(OF, 1);
     bool isNamed = isa<NamedDecl>(I);
     if (isNamed && !NamePrint.goodDeclName(cast<NamedDecl>(I))) {
         continue;
     }
+    ObjectScope oScope(OF, 1);
+    dumpDeclRef(*I);
   }
 
   return;

@@ -129,7 +129,7 @@ def docker_command(
     if recursion_level == 0 or recursion_level is None:
         inv += " --no-recursion"
     elif recursion_level == 1:
-        inv += " --recurse-inheritance"
+        inv += " --recurse-inherited"
     elif recursion_level == 2:
         inv += " --recurse-all"
 

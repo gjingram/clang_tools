@@ -71,7 +71,7 @@ struct ASTExporterOptions : ASTPluginLib::PluginASTOptionsBase {
   bool withPointers = true;
   bool dumpComments = true;
   bool useMacroExpansionLocation = true;
-  JSONWriter::JSONWriterOptions jsonWriterOptions = {.prettifyJson = true};
+  JSONWriter::JSONWriterOptions jsonWriterOptions = {.prettifyJson = false};
 
   void loadValuesFromEnvAndMap(
       const ASTPluginLib::PluginASTOptionsBase::argmap_t &map) {
@@ -3157,6 +3157,21 @@ void ASTExporter<ATDWriter>::VisitCXXRecordDecl(const CXXRecordDecl *D) {
     ArrayScope aScope(OF, 0);
   }
 
+  OF.emitTag("is_struct");
+  OF.emitBoolean(D->isStruct());
+
+  OF.emitTag("is_interface");
+  OF.emitBoolean(D->isInterface());
+
+  OF.emitTag("is_class");
+  OF.emitBoolean(D->isClass());
+
+  OF.emitTag("is_union");
+  OF.emitBoolean(D->isUnion());
+
+  OF.emitTag("is_enum");
+  OF.emitBoolean(D->isEnum());
+
   return;
 }
 
@@ -3239,8 +3254,8 @@ void ASTExporter<ATDWriter>::dumpTemplateArgument(const TemplateArgument &Arg) {
     OF.emitString("Integral");
 
     OF.emitTag("type");
-    { OF.emitString("None"); }
-
+    OF.emitString("None");
+    
     OF.emitTag("pointer");
     { OF.emitString("None"); }
 
@@ -3257,10 +3272,10 @@ void ASTExporter<ATDWriter>::dumpTemplateArgument(const TemplateArgument &Arg) {
     OF.emitString("Template");
 
     OF.emitTag("type");
-    { OF.emitString("None"); }
+    OF.emitString("None");
 
     OF.emitTag("pointer");
-    { OF.emitString("None"); }
+    dumpDeclPointer(Arg.getAsTemplate().getAsTemplateDecl());
 
     OF.emitTag("integer");
     OF.emitString("None");

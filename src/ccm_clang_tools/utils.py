@@ -1,6 +1,7 @@
 import os
 import shutil
 from typing import Dict
+import pdb
 
 clang_version_req = "10"
 clang_tool_path = os.path.dirname(os.path.abspath(__file__))
@@ -94,19 +95,17 @@ def check_image_exists(raise_: bool = True) -> "docker.models.images.Image":
     return image
 
 def find_symlinked_dir(
-        root: str,
-        rel_path: str,
-        rel_path_to_tgt: dict) -> Dict[str, str]:
-    rel_path_parts = rel_path.split(os.sep)
-    check_rel_path = ""
-    for part in rel_path_parts:
-       check_rel_path = os.path.join(check_rel_path, part)
-       check_path = os.path.join(root, check_rel_path)
-       if os.path.islink(check_path):
-           target = os.path.abspath(
-                   os.readlink(check_path)
+        abs_path: str,
+        abs_path_to_tgt: dict) -> Dict[str, str]:
+    abs_path_parts = abs_path.split(os.sep)
+    check_abs_path = f"{os.sep}"
+    for part in abs_path_parts:
+        check_abs_path = os.path.join(check_abs_path, part)
+        if os.path.islink(check_abs_path):
+            target = os.path.abspath(
+                   os.readlink(check_abs_path)
                    )
-           if not os.path.isdir(target):
-               continue
-           rel_path_to_tgt[check_rel_path] = target
+            if not os.path.isdir(target):
+                continue
+            abs_path_to_tgt[check_abs_path] = target
     return

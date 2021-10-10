@@ -1,6 +1,9 @@
 import os
+import shutil
 import argparse
 import subprocess
+from pathlib import Path
+from typing import List
 
 from .utils import (
     clang_tool_path,
@@ -12,32 +15,30 @@ from .utils import (
 def command(
         files,
         include_paths,
-        file_base,
         out_dir,
         clang_tool_verbose, 
         plugin_loc,
         plugin_name,
         recursion_level, 
         clang,
-        force_out_in_src,
         prettify):
 
-    for _file in files:
-  
-        file_dirname = os.path.dirname(os.path.join(file_base, _file))
-        out_dirname = out_dir if out_dir else file_dirname
-
-        out_filename = os.path.basename(_file).split(".")[0] + "-clang.json"
-
-        if not os.path.exists(out_dirname):
-            if clang_tool_verbose:
-                print(f"Creating output directory: {out_dirname}")
-            os.mkdir(out_dirname)
-  
-        if force_out_in_src:
-            out_filename = os.path.join(file_dirname, out_filename)
-        else:
-            out_filename = os.path.join(out_dirname, out_filename)
+    build_out_dir(out_dir, files)
+    for file_ in files:
+        file_for_out = file_
+        if file_for_out.startswith(os.sep + "host"):
+            file_for_out = os.path.relpath(
+                    file_for_out,
+                    os.sep + "host"
+                    )
+        out_dirname = os.path.dirname(
+                os.path.join(
+                    out_dir,
+                    file_for_out.lstrip(os.sep)
+                )
+                )
+        out_filename = os.path.basename(file_).split(".")[0] + "-clang.json"
+        out_file = os.path.join(out_dirname, out_filename)
 
         include = ""
         for inc_path in include_paths:
@@ -57,12 +58,12 @@ def command(
         inv += " -Xclang -plugin-arg-JsonASTExporter"
         inv += f" -Xclang PRETTIFY_JSON={int(prettify)}"
         inv += " -Xclang -plugin-arg-JsonASTExporter"
-        inv += f" -Xclang {out_filename} -c {os.path.join(file_base, _file)}"
+        inv += f" -Xclang {out_file} -c {file_}"
 
         if clang_tool_verbose:
             print("clang-parse")
-            print(f"Processing file: {_file}")
-            print(f"Output at: {os.path.join(out_dirname, out_filename)}")
+            print(f"Processing file: {file_}")
+            print(f"Output at: {out_file}")
             print(f"{inv}")
 
         stream = os.popen(inv)
@@ -75,53 +76,45 @@ def command(
 def docker_command(
         files,
         include_paths,
-        file_base,
         out_dir,
         clang_tool_verbose,
         recursion_level,
         clang,
-        force_out_in_src,
         prettify):
 
     call_dir = os.getcwd()
     inv = ""
-    mt_in = ""
-    mt_out = ""
+    mt = " -v /:/host"
 
-    mt_in = f" -v {file_base}:/src"
-    inv += " --file-base /src"
+    file_base = os.path.join("/host", call_dir)
 
     src_symlinks = {}
     for psymlink in files:
-        find_symlinked_dir(file_base, psymlink, src_symlinks)
+        find_symlinked_dir(psymlink, src_symlinks)
     inc_symlinks = {}
     for psymlink in include_paths:
-        find_symlinked_dir("", psymlink, inc_symlinks)
+        find_symlinked_dir(psymlink, inc_symlinks)
 
     mt_symlinks = ""
     for mount_to, target in src_symlinks.items():
-        mt_symlinks += f" -v {target}:{os.path.join('/src', mount_to)}"
+        mount_to = mount_to.lstrip(os.sep)
+        mt_symlinks += f" -v {target}:{os.path.join('/host', mount_to)}"
     for mount_to, target in inc_symlinks.items():
-        mt_symlinks += f" -v {target}:{mount_to}"
-
-    mt_includes = ""
-    for inc_path in include_paths:
-        mt_includes += f" -v {inc_path}:{inc_path}"
-
+        mount_to = mount_to.lstrip(os.sep)
+        mt_symlinks += f" -v {target}:{os.path.join('/host', mount_to)}"
 
     inv += " --files"
     for _file in files:
-        inv += f" {_file}"
+        file_path = os.path.join(
+                os.sep,
+                "host",
+                _file.lstrip(os.sep)
+                )
+        inv += f" {file_path}"
 
-    if out_dir:
-        if not os.path.exists(os.path.join(call_dir, out_dir)):
-            os.mkdir(os.path.join(call_dir, out_dir))
-        mt_out = f" -v {out_dir}:/out"
-    else:
-        mt_out = f" -v {file_base}:/out"
-        force_out_in_src = True
+    out_dir = os.path.join("/host", out_dir.lstrip(os.sep))
 
-    inv += " --out-dir /out"
+    inv += f" --out-dir {out_dir}"
 
     if clang_tool_verbose:
         inv += " --clang-tool-verbose"
@@ -133,9 +126,6 @@ def docker_command(
     elif recursion_level == 2:
         inv += " --recurse-all"
 
-    if force_out_in_src:
-        inv += " --force-out-in-src"
-
     if prettify:
         inv += " --prettify"
 
@@ -144,10 +134,9 @@ def docker_command(
 
     docker_inv = "docker run -it"
     docker_inv += " --rm"
-    docker_inv += f" {mt_in}"
-    docker_inv += f" {mt_out}"
-    docker_inv += f" {mt_includes}"
+    docker_inv += f" {mt}"
     docker_inv += f" {mt_symlinks}"
+    docker_inv += " --user $(id -u):$(id -g)"
     docker_inv += f" {get_docker_image_name()}"
     docker_inv += f" {inv}"
 
@@ -156,6 +145,32 @@ def docker_command(
     if out:
         print(out)
 
+    return
+
+def build_out_dir(out_dir: str, files: List[str]) -> None:
+    if not out_dir.startswith(os.sep):
+        out_dir = os.sep + out_dir
+    if os.path.exists(out_dir) and not os.path.isdir(out_dir):
+        raise RuntimeError("A file exists at the specified output path")
+    elif os.path.exists(out_dir) and os.path.isdir(out_dir):
+        shutil.rmtree(out_dir)
+    for file_ in files:
+        full_file = file_
+        if full_file.startswith(os.sep + "host"):
+            full_file = os.path.relpath(
+                    full_file,
+                    os.sep + "host"
+                    )
+        if not full_file.startswith(os.sep):
+            full_file = os.sep + full_file
+        out_filename = os.path.join(
+                out_dir,
+                full_file.lstrip(os.sep)
+                )
+        out_filepath = Path(out_filename)
+        out_dirpath = out_filepath.parent
+        if not os.path.exists(out_dirpath):
+            out_dirpath.mkdir(parents=True)
     return
 
 def run_clang_parse():
@@ -168,22 +183,11 @@ def run_clang_parse():
                 )
             )
     aparse.add_argument(
-            "--abspath",
-            help="Interpret file path as absolute",
-            action="store_true",
-            default=False
-            )
-    aparse.add_argument(
             "--prettify",
             "-p",
             help="Prettify JSON output",
             action="store_true",
             default=False
-            )
-    aparse.add_argument(
-            "--file-base",
-            help="Interpret file name as being relative to this",
-            default=os.getcwd()
             )
     aparse.add_argument(
             "--files",
@@ -199,7 +203,7 @@ def run_clang_parse():
     aparse.add_argument(
             "--out-dir",
             help="Parse JSON out directory",
-            default=None
+            default=os.path.join(os.getcwd(), "clang_out")
            )
     aparse.add_argument(
             "--plugin-loc",
@@ -224,12 +228,6 @@ def run_clang_parse():
             default=False
             )
     aparse.add_argument(
-            "--force-out-in-src",
-            help="Force output to be placed in the file source directories",
-            action="store_true",
-            default=False
-            )
-    aparse.add_argument(
             "--no-recursion",
             help="Don't recurse into any referenced declarations",
             action="store_true"
@@ -245,10 +243,25 @@ def run_clang_parse():
             action="store_true"
             )
 
-
     known, unknown = aparse.parse_known_args()
     if not known.files or len(known.files) == 0:
         raise RuntimeError("No input files provided")
+
+    call_dir = os.getcwd()
+    use_files = []
+    for file_ in known.files:
+        if file_.startswith(os.sep):
+            use_files.append(file_)
+            continue
+        use_files.append(os.path.join(call_dir, file_))
+
+    use_includes = []
+    if known.includes:
+        for path in known.includes:
+            if path.startswith(os.sep):
+                use_includes.append(path)
+                continue
+            use_includes.append(os.path.join(call_dir, path))
 
     recursion_level = 0
     if known.recurse_inherited:
@@ -258,34 +271,26 @@ def run_clang_parse():
     if known.no_recursion:
         recursion_level = 0
 
-    includes = []
-    if known.includes:
-        includes = known.includes
-
     if known.docker:
         docker_command(
-                known.files,
-                includes,
-                known.file_base,
+                use_files,
+                use_includes,
                 known.out_dir,
                 known.clang_tool_verbose,
                 recursion_level,
                 unknown,
-                known.force_out_in_src,
                 known.prettify
                 )
     else:
         command(
-                known.files,
-                includes,
-                known.file_base,
+                use_files,
+                use_includes,
                 known.out_dir,
                 known.clang_tool_verbose,
                 known.plugin_loc,
                 known.plugin_name,
                 recursion_level,
                 unknown,
-                known.force_out_in_src,
                 known.prettify
                 )
 

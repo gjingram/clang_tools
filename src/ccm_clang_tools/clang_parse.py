@@ -44,7 +44,7 @@ def command(
         for inc_path in include_paths:
             include += f" -Xclang -I{inc_path}"
 
-        inv = f"clang-{clang_version_req} -fsyntax-only -Xpreprocessor"
+        inv = f"clang-{clang_version_req} -xc++ -fsyntax-only -Xpreprocessor"
         inv += " -detailed-preprocessing-record"
         inv += include
         for clang_arg in clang:

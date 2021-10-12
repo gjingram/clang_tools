@@ -1,6 +1,6 @@
 [project]
 name = "ccm-clang-tools"
-version = "0.1.6"
+version = "0.1.8"
 description = ""
 authors = [
     {name = "Gabriel Ingram", email = "gabriel.ingram@colorado.edu"},
@@ -16,7 +16,6 @@ license = {text = "MIT"}
 homepage = "https://github.com/gjingram/clang_tools"
 
 [tool.pdm]
-build = "build_bin"
 package-dir = "src"
 includes = [
     "build_bin.py",

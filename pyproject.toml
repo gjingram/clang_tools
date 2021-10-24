@@ -1,12 +1,13 @@
 [project]
 name = "ccm-clang-tools"
-version = "0.1.8"
+version = "0.1.10"
 description = ""
 authors = [
     {name = "Gabriel Ingram", email = "gabriel.ingram@colorado.edu"},
 ]
 dependencies = [
     "docker~=5.0",
+    "loguru~=0.5",
 ]
 requires-python = ">=3.8"
 dynamic = ["classifiers"]
@@ -18,7 +19,6 @@ homepage = "https://github.com/gjingram/clang_tools"
 [tool.pdm]
 package-dir = "src"
 includes = [
-    "build_bin.py",
     "LICENSE",
     "README.md",
     "src/**/*.py",

@@ -152,8 +152,6 @@ def build_out_dir(out_dir: str, files: List[str]) -> None:
         out_dir = os.sep + out_dir
     if os.path.exists(out_dir) and not os.path.isdir(out_dir):
         raise RuntimeError("A file exists at the specified output path")
-    elif os.path.exists(out_dir) and os.path.isdir(out_dir):
-        shutil.rmtree(out_dir)
     for file_ in files:
         full_file = file_
         if full_file.startswith(os.sep + "host"):

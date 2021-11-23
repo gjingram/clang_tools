@@ -2450,8 +2450,17 @@ void ASTExporter<ATDWriter>::VisitEnumDecl(const EnumDecl *D) {
     OF.emitString("None");
   }
 
+      
   OF.emitTag("is_module_private");
   OF.emitBoolean(IsModulePrivate);
+
+  OF.emitTag("int_type");
+  if (IsScoped) {
+    ObjectScope oScope(OF, 1);
+    dumpQualType(D->getIntegerType());
+  } else {
+    OF.emitString("None");
+  }
 
   return;
 }
@@ -2628,6 +2637,12 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
     OF.emitString(std::to_string(fnv64Hash(StrOS)));
   } else {
     OF.emitString("None");
+  }
+
+  OF.emitTag("return_type");
+  {
+      ObjectScope oScope(OF, 1);
+      dumpQualType(D->getReturnType());
   }
 
   OF.emitTag("is_cpp");
